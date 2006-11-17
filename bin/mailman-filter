@@ -116,9 +116,14 @@ run_spamassassin_check()
     fi
 }
 
+filter_body()
+{
+    sed '1,/^$/d' msg2.1
+}
+
 check_msg_digests()
 {
-    DIGEST=$(sed '1,/^$/d' msg2.1 | md5sum | awk '{print$1}')
+    DIGEST=$(filter_body | md5sum | awk '{print$1}')
     DIGEST_DIR=$HOME/var/digests/$(echo $DIGEST | sed 's/^\(..\).*/\1/')
     DIGEST_FILE=$(echo $DIGEST | sed 's/^..//')
     if [ -f $DIGEST_DIR/$DIGEST_FILE ]; then
