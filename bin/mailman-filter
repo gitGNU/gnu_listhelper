@@ -116,13 +116,38 @@ run_spamassassin_check()
     fi
 }
 
+check_msg_digests()
+{
+    DIGEST=$(sed '1,/^$/d' msg2.1 | md5sum | awk '{print$1}')
+    DIGEST_DIR=$HOME/var/digests/$(echo $DIGEST | sed 's/^\(..\).*/\1/')
+    DIGEST_FILE=$(echo $DIGEST | sed 's/^..//')
+    if [ -f $DIGEST_DIR/$DIGEST_FILE ]; then
+	if [ $(<$DIGEST_DIR/$DIGEST_FILE) -gt 7 ]; then
+	    isspam=true
+	fi
+    fi
+}
+
+incr_msg_digests()
+{
+    mkdir -p $DIGEST_DIR
+    if [ ! -f $DIGEST_DIR/$DIGEST_FILE ]; then
+	echo 0 >$DIGEST_DIR/$DIGEST_FILE
+    fi
+    expr $(<$DIGEST_DIR/$DIGEST_FILE) + 1 >$DIGEST_DIR/$DIGEST_FILE
+}
+
 incr_mail_count
 
 isspam=false
 
+$isspam || check_msg_digests
+
 $isspam || run_montypython_check
 
 $isspam || run_spamassassin_check
+
+$isspam && incr_msg_digests
 
 if $isspam; then
     FOLDER=$HOME/Mail/caughtspam
@@ -133,8 +158,10 @@ else
     incr_nonspam_count
 fi
 
-mkdir -p $FOLDER/tmp $FOLDER/new $FOLDER/cur
-chmod a+r $FOLDER/new/$(safecat $FOLDER/tmp $FOLDER/new < msg2.2)
+if [ -f msg2.2 ]; then
+    mkdir -p $FOLDER/tmp $FOLDER/new $FOLDER/cur
+    chmod a+r $FOLDER/new/$(safecat $FOLDER/tmp $FOLDER/new < msg2.2)
+fi
 
 FOLDER=${FOLDER}-mm
 mkdir -p $FOLDER/tmp $FOLDER/new $FOLDER/cur
