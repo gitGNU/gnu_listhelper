@@ -1,0 +1,169 @@
+
+PATH=$HOME/bin:/usr/local/bin:/usr/bin:/bin
+# Let deliver to /var/mail/mlmgr for now and my cron will remind me to read it.
+#DEFAULT=$MAILDIR/Maildir/
+COMSAT=no
+MAILDIR=$HOME/Mail
+ARCHIVE=ARCHIVE
+LOGFILE=$HOME/log/procmail.logfile
+# VERBOSE=on
+UMASK=02
+
+:0
+* ^X-Original-To: listhelper-honeypot
+honeypot/
+
+# Mail to the moderators.  Process and handle.  SpamAssassin is run
+# from this script after unpacking the attached message.
+
+## If it is from a mailer daemon then we want to discard it.
+#:0c
+#* 1^0 ^From: (.*<)?MAILER-DAEMON@
+#* 1^0 ^From: (.*<)?postmaster@
+#would-discard/
+#
+## Chain on the previous rule ('A' flag).
+#:0A
+#| mailman-discard
+
+## Special to avoid full spamassassin processing on known signature.
+#:0c
+#* ^Subject: [^ ]+$
+#* ^In order to benefit from this lucrative opportunity you need
+#* ^to get in now, before the big news release.
+#would-discard2/
+#
+## Chain on the previous rule ('A' flag).
+#:0Aw:serialize.lock
+#| mailman-discard-nolearn || exit 75
+
+#:0HB:
+#* ^Subject: [^ ]+$
+#* ^One of the key rules every good trader knows is volume
+#* ^before price.  Once the volume is there the price will
+#would-discard2/
+#
+## Chain on the previous rule ('A' flag).
+#:0Aw:serialize.lock
+#| mailman-discard-nolearn || exit 75
+
+# Special to avoid full spamassassin processing on known signature.
+:0HB:
+* ^Subject: [^ ]+$
+* ^In order to benefit from this lucrative opportunity you need
+* ^to get in now, before the big news release.
+spam-new/
+
+:0HB:
+* ^Subject: [^ ]+$
+* ^One of the key rules every good trader knows is volume
+* ^before price.  Once the volume is there the price will
+spam-new/
+
+:0HB:
+* ^Subject: [^ ]+$
+* ^Members, are you tired of your investments bringing you only a few
+* ^are bringing you a company which is just the thing for an investor looking
+spam-new/
+
+:0HB:
+* ^Subject: hi it's [^ ]+$
+* ^TheSubway com Post its Hot Stock List and MPRG
+* ^Its no wonder MPRG has hit the Hot Stock List
+spam-new/
+
+# Special to avoid full spamassassin processing on known signature.
+:0HB
+* 1^0 ^Subject: CardDebtFree Overnight
+* 1^0 ^Subject: Completely CreditCardDebtFree Overnight
+* 1^0 ^Subject: CreditCardDebtFree Overnight
+* 1^0 ^Subject: DebtFree Immediately
+* 1^0 ^Subject: Fully DebtFree Immediately
+* 1^0 ^Subject: OutOfDebt Overnight
+* 1^0 ^Subject: Totally OutOfDebt Overnight
+* 1^0 ^Subject: TotallyCardDebtFree Overnight
+spam-new/
+
+## Chain on the previous rule ('A' flag).
+#:0Aw:serialize.lock
+#| mailman-discard-nolearn || exit 75
+
+#:0HBc
+#* ^Subject: [^ ]+ post from [^ ]+ requires approval
+#* ^As list administrator, your authorization is requested for the
+#* ^Subject: confirm
+#would-discard2/
+#
+## Chain on the previous rule ('A' flag).
+#:0Aw:serialize.lock
+#| mailman-discard-nolearn || exit 75
+
+:0w:serialize.lock
+* ^X-List-Administrivia: yes
+* ^Subject: .* post from
+| mailman-filter || exit 75
+
+# Added and combined with other List-Administrivia patterns.
+# Example for the regular expression match:
+#   Subject: 1 bug-gnu-utils moderator request(s) waiting
+#   Subject: bug-grep subscription notification
+#   Subject: tug.org mailing list memberships reminder
+
+:0
+* ^X-List-Administrivia: yes
+{
+  :0
+  * 1^0 ^Subject: The results of your email commands
+  * 1^0 ^Subject: Auto-discard notification
+  * 1^0 ^Subject: Last autoresponse notification for today
+  * 1^0 ^Subject: [-a-zA-Z0-9]+ subscription notification
+  * 1^0 ^Subject: [-a-zA-Z0-9]+ unsubscribe notification
+  /dev/null
+
+  :0
+  * 1^0 ^Subject: [0-9]+ [-a-zA-Z0-9]+ moderator request
+  * 1^0 ^Subject: [-a-zA-Z0-9.]+ mailing list memberships reminder
+  * 1^0 ^Subject: Bounce action notification
+  administrivia/
+}
+
+# I think this is a mailman bug that it sends messages to the list owner
+# to the list moderators too.  /dev/null these.
+
+:0
+* ^Sender: mailman-bounces@
+* ^TO_[-a-zA-Z0-9]+-owner@
+/dev/null
+
+# Mail to the list.  Probably approved but possibly whitelisted.
+# Teach all mail through the list as non-spam.  Be careful that random
+# other mail through this account is not taught.  This is needed
+# because mailman sends other types of messages to the moderator
+# address.
+
+# Keep a running counter for later graphing of data.
+:0wic:listcounter.lock
+| sh -c 'expr $(<$HOME/Mail/listcounter) + 1 >$HOME/Mail/listcounter'
+
+:0c
+* ^X-BeenThere: [-a-zA-Z0-9]+@
+* ^Precedence: (list|bulk|fm-user)
+* ^List-Archive:
+* ^List-Id:
+* ^List-Post:
+* ^List-Subscribe:
+* ^List-Unsubscribe:
+| sa-learn --ham >/dev/null 2>&1
+
+# Archive all mail that comes through to the lists.
+# Chain on the previous rule ('A' flag) and match on the listname.
+
+:0A
+* ^X-BeenThere: [-a-zA-Z0-9]+@
+* ^X-BeenThere: \/[-a-zA-Z0-9]+
+$ARCHIVE/$MATCH/
+
+# There is a lot of miscellaneous mail to the listhelper which is ignored.
+:0
+* ^Sender: mailman-bounces@
+/dev/null

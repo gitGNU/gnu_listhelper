@@ -1,0 +1,102 @@
+#!/bin/sh
+#
+# This script processes a mailman moderator message.
+#
+# Mailman moderator messages are structured with three mime encoded parts.
+# Part 1: A top mailman introduction message.
+# Part 2: The original message to the mailing list.
+# Part 3: A bottom mailman control message.
+#
+# Replying to the 3rd part will discard the message.
+#
+# The process implemented here is to unpack the mime components of the
+# message first into the three components.  Some components
+# recursively have sub-components that are also unpacked.  These are
+# put into the less than descriptive numbered msgNUM.NUM files.
+#
+# SpamAssassin is run on the original message payload.  If SA
+# classifies the message as spam then a control message back to
+# mailman is generated to discard the spam.
+
+export LC_ALL=C			# Ensure a standard sort behavior.
+umask 02			# Set up for group sharing.
+PATH=$PATH:/usr/sbin:/sbin	# for sendmail et al
+
+# Work in a subdirectory.  Set up to clean up when we exit.
+trap 'cd / ; rm -rf $TMPDIR' EXIT
+TMPDIR=$(mktemp -d) || exit 1
+
+cd $TMPDIR || exit 1
+
+# Read the file from stdin and save to a working copy of the file.
+# With the working copy we can then make multiple passes.  We do make
+# multiple passes currently.  This is not the performance bottleneck
+# though and so has not been optimized to be avoided.
+
+if ! cat > msg0; then
+    exit 1
+fi
+
+# Unpack the individual mailman encoded parts into separate files.
+# This will create msg1, msg2, msg3 corresponding to the three parts
+# encoded by mailman.
+
+if ! mime-unpack < msg0; then
+    exit 1
+fi
+
+# The mime-unpack script unpacks mime attachments but leaves the mime
+# content-type header behind as a message header.  Delete this off of
+# the message.
+
+if ! sed '1,/^$/d' msg2 > msg2.1; then
+    exit 1
+fi
+if ! sed '1,/^$/d' msg3 > msg3.1; then
+    exit 1
+fi
+
+if [ ! -s msg2.1 ]; then
+    echo Error: zero sized file in second attachment 1>&2
+    exit 1
+fi
+
+# Try to work in cubby.  Not fully fleshed out yet.
+# sa -C $HOME/mailman-gnu -p $HOME/mailman-gnu/user_prefs -t -L < msg2.1
+
+if ! spamassassin < msg2.1 > msg2.2; then
+    exit 1
+fi
+
+# If we need the message-id.
+# msgid=$(awk '/^Subject: confirm/{print$NF;exit}' msg3.1)
+
+# Keep some message stats for later graphing.
+if [ ! -f $HOME/Mail/counter ]; then
+    echo 0 > $HOME/Mail/counter
+fi
+expr $(<$HOME/Mail/counter) + 1 >$HOME/Mail/counter
+
+if grep -q "^X-Spam-Flag: YES" msg2.2; then
+    FOLDER=$HOME/Mail/caughtspam
+    # Reply to the mailman message with the discard command for that md5sum.
+    formail -r < msg3.1 | sendmail -t -oi
+    if [ ! -f $HOME/Mail/spamcounter ]; then
+	echo 0 > $HOME/Mail/spamcounter
+    fi
+    expr $(<$HOME/Mail/spamcounter) + 1 >$HOME/Mail/spamcounter
+else
+    FOLDER=$HOME/Mail/caughtham
+    if [ ! -f $HOME/Mail/hamcounter ]; then
+	echo 0 > $HOME/Mail/hamcounter
+    fi
+    expr $(<$HOME/Mail/hamcounter) + 1 >$HOME/Mail/hamcounter
+fi
+mkdir -p $FOLDER/tmp $FOLDER/new $FOLDER/cur
+chmod a+r $FOLDER/new/$(safecat $FOLDER/tmp $FOLDER/new < msg2.2)
+
+FOLDER=${FOLDER}-mm
+mkdir -p $FOLDER/tmp $FOLDER/new $FOLDER/cur
+chmod a+r $FOLDER/new/$(safecat $FOLDER/tmp $FOLDER/new < msg0)
+
+exit 0

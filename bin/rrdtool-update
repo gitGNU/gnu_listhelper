@@ -1,0 +1,60 @@
+#!/bin/sh
+
+PATH=$HOME/bin:$PATH
+
+for f in counter spamcounter hamcounter listcounter; do
+    if [ ! -f $HOME/Mail/$f ]; then
+	echo "Error: Missing counter file: $f" 1>&2
+	exit 1
+    fi
+done
+
+now=$(date +%s)
+mailcount=$(<$HOME/Mail/counter) # A total count of all mailman messages.
+spamcount=$(<$HOME/Mail/spamcounter)
+hamcount=$(<$HOME/Mail/hamcounter)
+listcount=$(<$HOME/Mail/listcounter) # Count of mailing list messages.
+
+if [ ! -f $HOME/var/mail.rrd ]; then
+    rrdtool create $HOME/var/mail.rrd \
+	--start 1143564000 \
+	DS:mailcount:COUNTER:600:U:U \
+	DS:spamcount:COUNTER:600:U:U \
+	DS:hamcount:COUNTER:600:U:U \
+	DS:listcount:COUNTER:600:U:U \
+	RRA:AVERAGE:0.5:1:1440 \
+	RRA:AVERAGE:0.5:3:672 \
+	RRA:AVERAGE:0.5:6:1440
+    # RRA:CF:xff:steps:rows
+    #
+    # Consolidation Function is AVERAGE.  (e.g. AVERAGE, MIN, MAX, LAST)
+    #
+    # xff The xfiles factor defines what part of a consolidation
+    # interval may be made up from *UNKNOWN* data while the consoli
+    # dated value is still regarded as known.
+    #
+    # steps defines how many of these primary data points are used to
+    # build a consolidated data point which then goes into the
+    # archive.
+    #
+    # rows defines how many generations of data values are kept in an
+    # RRA.
+fi
+
+graphonly=false
+case $0 in
+    -g)
+	graphonly=true
+	;;
+esac
+	
+if ! $graphonly; then
+    echo $now:$mailcount:$spamcount:$hamcount:$listcount >> $HOME/var/rrd.history
+
+    rrdtool update $HOME/var/mail.rrd \
+	$now:$mailcount:$spamcount:$hamcount:$listcount
+fi
+
+rrdtool-graph
+
+exit 0

@@ -1,0 +1,77 @@
+# auto_view multipart/mixed
+
+# set spoolfile="~/Mail/Maildir" # Must match ~/.procmailrc default folder
+set delete="yes"  # Don't ask for mails flagged 'deleted' when exiting
+set move="no"  # Don't move to 'mbox'
+set confirmappend="no"  # Don't ask to append a mail
+set confirmcreate="yes" # Ask before creating a new folder
+set save_empty="no"	# Delete empty folders
+set sort=date-received
+set delete="yes"  # Don't ask for mails flagged 'deleted' when exiting
+set move="no"  # Don't move to 'mbox'
+set confirmappend="no"  # Don't ask to append a mail
+set confirmcreate="yes" # Ask before creating a new folder
+set save_empty="no"	# Delete empty folders
+set nomark_old  # Don't mark unread new msgs as old.
+set nosmart_wrap
+set nowait_key
+set nomime_forward
+set recall=no
+set abort_nosubject=no
+set fast_reply=yes
+set pipe_decode=no
+set read_inc=0
+set write_inc=0
+
+set header_cache="~/var/headercache"
+set maildir_header_cache_verify=no
+
+# Set up a default basic ordering using a match on /./ which will always run.
+folder-hook . 'ignore *'
+folder-hook . 'unignore Reply-To: Mail-Followup-To: From: To: Cc: Subject: Date:'
+folder-hook . 'hdr_order Reply-To: Mail-Followup-To: From: To: Cc: Subject: Date:'
+# Set up a specific ordering for mailman mailboxes because other info is useless.
+folder-hook .*-mm 'ignore *'
+folder-hook .*-mm 'unignore Date: X-BeenThere:'
+folder-hook .*-mm 'hdr_order Date: X-BeenThere:'
+
+bind pager <up> previous-line
+bind pager <down> next-line
+
+# sas -- small script -- sa-learn --spam
+# sah -- small script -- sa-learn --ham
+# ;WN -- on tagged messages clear new flag
+# ;s=spam -- on tagged messages save to spam folder in Mail directory
+# ;s=ham -- on tagged messages save to ham folder in Mail directory
+# macro index "S" "|sas\nt;WN;s=spam\n" "Relearn and file as SPAM"
+# macro index "S" "s=spam-new\n" "Relearn and file as SPAM"
+# macro index "S" "|mailman-discard\ns=spam-mm\n" "Process mailman spam"
+# macro pager "S" "|mailman-discard\ns=spam-mm\n" "Process mailman spam"
+
+folder-hook . 'macro index "H" "|sah\nt;WN;s=ham\n" "Relearn and file as HAM"'
+folder-hook . 'macro index "S" "s=spam-new\n" "Relearn and file as SPAM"'
+
+folder-hook caughtham-mm 'macro index "S" "|mailman-known-spam\ns=spam-mm\n" "Process mailman spam"'
+folder-hook caughtham-mm 'macro pager "S" "|mailman-known-spam\ns=spam-mm\n" "Process mailman spam"'
+folder-hook caughtham 'macro index "S" "s=spam-new\n" "Process mailman spam"'
+folder-hook caughtham 'macro pager "S" "s=spam-new\n" "Process mailman spam"'
+
+# Set things up so that =caughtspam displays and sorts by SA score
+# while other folders do normal display and scoring.
+# hits is old sa-2.x name, score is new sa-3.x name.
+spam "X-Spam-Status: (Yes|No), score=(-?[[:digit:]]+\.[[:digit:]]+)" "%2"
+#set index_format="%4C %Z %{%b %d} %-15.15L (%?l?%4l&%4c?) %s"
+folder-hook . 'set index_format="%4C %Z %{%b %d} %-15.15L (%?l?%4l&%4c?) %s"'
+folder-hook caughtspam 'set index_format="%4C %Z %{%b%d} %4H %-15.15F %4c %s"'
+folder-hook caughtham 'set index_format="%4C %Z %{%b%d} %4H %-15.15F %4c %s"'
+folder-hook . 'set sort=date-received'
+folder-hook caughtspam 'set sort=spam'
+folder-hook caughtham 'push l~N\nop<home>'
+
+set spoolfile==caughtham
+#mailboxes !
+mailboxes =caughtham
+#mailboxes =caughtham-mm
+mailboxes =caughtspam
+#mailboxes =caughtspam-mm
+# mailboxes =administrivia

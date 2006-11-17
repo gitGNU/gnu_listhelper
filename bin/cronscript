@@ -1,0 +1,51 @@
+#!/bin/sh
+
+NOTIFY_ADDR=bob
+
+PATH=$HOME/bin:/usr/local/bin:$PATH
+
+trap 'rm -f $LOGFILE' EXIT
+LOGFILE=$(mktemp) || exit 1
+
+if [ ! -t 0 ]; then
+    exec >$LOGFILE 2>&1 </dev/null
+fi
+
+mail-learn-spam
+
+if [ -s $LOGFILE ]; then
+
+    # This is the strangest thing.  This cron script runs ever minute.
+    # But the past few days I have once or twice a day seen this
+    # script dump shell tracing output as if 'set -x' were in effect.
+    # But I can't see it anywhere.  It is as if someone is running 'sh
+    # -x cronscript' but no one is admitting to it.  Try to find the
+    # reason for this noise to be happening all of a sudden.
+    # --Bob  14 Sep 2006
+
+    # Found it.  I had #!/bin/sh -x in mailman-discard-nolearn called
+    # when processing manually identified files.  But I am going to
+    # keep this debug here for a little bit longer.
+
+    echo begin debug
+    echo begin pid output
+    echo pid=$$
+    echo ppid=$PPID
+    echo end pid output
+    echo begin w output
+    w
+    echo end w output
+    echo begin ps output
+    ps -efH
+    echo end ps output
+    echo begin env output
+    env
+    echo end env output
+    echo begin tty output
+    tty
+    echo end tty output
+    echo end debug
+    mailx -s "cronscript output" $NOTIFY_ADDR < $LOGFILE
+fi
+
+exit 0

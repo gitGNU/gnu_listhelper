@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+
+# Depends: librmail-ruby1.8 | librmail-ruby1.6 | librmail-ruby
+
+require "rmail/parser"
+
+message = RMail::Parser.read(STDIN)
+
+if !message.multipart?()
+  STDERR::puts "Error: Not a multipart message."
+  exit 1
+end
+
+msgnum = 0
+message.body.each { |attachment|
+  msgnum += 1
+  File.open("msg#{msgnum}","w") { |file|
+    file.puts attachment
+  }
+}

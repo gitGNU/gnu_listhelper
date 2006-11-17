@@ -1,0 +1,175 @@
+#!/bin/sh -x
+
+# This script reads a mailman moderator message on stdin, trains on it
+# as spam, and generates a discard message back to mailman.
+
+export LC_ALL=C
+umask 02
+PATH=$PATH:/usr/sbin:/sbin	# for sendmail et al
+
+trap 'cd / ; rm -rf $TMPDIR' EXIT
+TMPDIR=$(mktemp -d) || exit 1
+
+cd $TMPDIR || exit 1
+
+# msg0 will be the entire verbatim mailman message with the mime
+# encoded payload.
+if ! cat > msg0; then
+    exit 1
+fi
+
+if ! mime-unpack < msg0; then
+    exit 1
+fi
+
+# This will leave three files behind.  All three will be embedded with
+# a MIME type identification header at the start of the file.
+#   msg1 will be the embedded mailman notification message.
+#   msg2 will be the embedded mailing list message.
+#   msg3 will be the embedded mailman control message.
+
+# The mailing list message is embedded with a MIME identification
+# header.  This needs to be removed to extract the embedded message.
+if ! sed '1,/^$/d' msg2 > msg2.1; then
+    exit 1
+fi
+# msg2.1 is the raw mailing list message.
+
+# The mailman control message is embedded with a MIME identification
+# header.  This needs to be removed to extract the embedded control message.
+if ! sed '1,/^$/d' msg3 > msg3.1; then
+    exit 1
+fi
+# msg3.1 is the raw mailman control message from mailman to the moderator.
+
+if [ ! -s msg2.1 ]; then
+    # Hmm...  The mailing list message was empty.  I will have other
+    # rules to catch this in the main mail processing loop and so by
+    # this time we should never see one of these.  But avoid training
+    # on it at this point.  Just exit out.
+    echo Error: zero sized file in second attachment 1>&2
+    exit 1
+fi
+
+# Reply to the mailman message with the discard command for that md5sum.
+formail -r < msg3.1 | sendmail -t -oi
+
+sa-learn --spam < msg2.1
+
+exit 0
+
+# Example msg1 file:
+# Content-Type: text/plain; charset="us-ascii"
+# MIME-Version: 1.0
+# Content-Transfer-Encoding: 7bit
+# 
+# As list administrator, your authorization is requested for the
+# following mailing list posting:
+# 
+#     List:    Bug-bash@gnu.org
+#     From:    nial.ocallaghan@netcity.be
+#     Subject: ??????????? ????????
+#     Reason:  Post by non-member to a members-only list
+# 
+# At your convenience, visit:
+# 
+#     http://lists.gnu.org/mailman/admindb/bug-bash
+#         
+# to approve or deny the request.
+
+# Example msg2 file:
+#Content-Type: message/rfc822
+#MIME-Version: 1.0
+#
+#Envelope-to: bug-bash@gnu.org
+#Received: from mailman by lists.gnu.org with tmda-scanned (Exim 4.43)
+#	id 1EQkKT-0002pK-MZ
+#	for bug-bash@gnu.org; Sat, 15 Oct 2005 07:35:57 -0400
+#Received: from exim by lists.gnu.org with spam-scanned (Exim 4.43)
+#	id 1EQkKS-0002p7-Bz
+#	for bug-bash@gnu.org; Sat, 15 Oct 2005 07:35:57 -0400
+#Received: from [199.232.76.173] (helo=monty-python.gnu.org)
+#	by lists.gnu.org with esmtp (Exim 4.43) id 1EQkKS-0002p4-65
+#	for bug-bash@gnu.org; Sat, 15 Oct 2005 07:35:56 -0400
+#Received: from [195.184.181.2] (helo=mx01.broadband.hu)
+#	by monty-python.gnu.org with esmtp (Exim 4.34) id 1EQkKR-00035q-Ch
+#	for bug-bash@gnu.org; Sat, 15 Oct 2005 07:35:56 -0400
+#Received: from localhost (localhost [127.0.0.1])
+#	by mx01.broadband.hu (Postfix) with ESMTP id DC82D2FFB1F;
+#	Fri, 14 Oct 2005 22:45:32 +0200 (CEST)
+#Received: from mx01.broadband.hu ([127.0.0.1])
+#	by localhost (mx01 [127.0.0.1]) (amavisd-new, port 10024) with ESMTP
+#	id 16107-10; Fri, 14 Oct 2005 22:45:28 +0200 (CEST)
+#Received: from catv-50636255.catv.broadband.hu
+#	(catv-50636255.catv.broadband.hu [80.99.98.85])
+#	by mx01.broadband.hu (Postfix) with SMTP id CFC802FE77F;
+#	Fri, 14 Oct 2005 21:51:40 +0200 (CEST)
+#Message-ID: <000b01c5d0be$643696f0$55626350@jmuiiq>
+#From: =?Windows-1251?Q?=D0=E5=EA=EB=E0=EC=ED=EE=E5_=E0=E3=E5=ED=F1=F2=E2=EE?=
+#	<nial.ocallaghan@netcity.be>
+#To: =?Windows-1251?Q?=CA=EB=E8=E5=ED=F2=F3?= <ethibadeau@skynet.be>
+#Subject: =?Windows-1251?Q?=DD=EB=E5=EA=F2=F0=EE=ED=ED=FB=E5_=F0=E0=F1=F1=FB=EB=EA=E8?=
+#Date: Fri, 14 Oct 2005 12:54:19 -0700
+#MIME-Version: 1.0
+#Content-Type: multipart/related; type="multipart/alternative";
+#	boundary="----=_NextPart_000_0017_01C5D0BE.643696F0"
+#X-Priority: 3
+#X-MSMail-Priority: Normal
+#X-Mailer: Microsoft Outlook Express 6.00.2800.1106
+#X-MimeOLE: Produced By Microsoft MimeOLE V6.00.2800.1106
+#X-Virus-Scanned: by amavisd-new-20030616-p10 (Debian) at broadband.hu
+#
+#------=_NextPart_000_0017_01C5D0BE.643696F0
+#Content-Type: multipart/alternative;
+#	boundary="----=_NextPart_001_000D_01C5D0BE.643696F0"
+#
+#------=_NextPart_001_000D_01C5D0BE.643696F0
+#Content-Type: text/plain;
+#        charset="windows-1251"
+#Content-Transfer-Encoding: quoted-printable
+#
+# ... bayes poison attempt deleted...
+#
+#------=_NextPart_001_000D_01C5D0BE.643696F0
+#Content-Type: text/html;
+#        charset="windows-1251"
+#Content-Transfer-Encoding: quoted-printable
+#
+#<html>
+#<head>
+# ...  html payload deleted ...
+#</body>
+#</html>
+#
+#------=_NextPart_001_000D_01C5D0BE.643696F0--
+#------=_NextPart_000_0017_01C5D0BE.643696F0
+#Content-Type: image/gif;
+#        name="image001466174840.gif"
+#Content-Transfer-Encoding: base64
+#Content-ID: <000601c5d0be$643696f0$55626350@jmuiiq>
+#
+#R0lGODlhWAJZAfcAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A/wD/
+# ...  virus payload deleted ...
+#nOp0pzztqU9/ilGePNQrQC2qUY+K1KQqdalMbSpTEQnVqEp1qlStqlWvKsWAAAA7
+#
+#------=_NextPart_000_0017_01C5D0BE.643696F0--
+#
+
+# Example msg3 file:
+# Content-Type: message/rfc822
+# MIME-Version: 1.0
+# 
+# Content-Type: text/plain; charset="us-ascii"
+# MIME-Version: 1.0
+# Content-Transfer-Encoding: 7bit
+# Subject: confirm 09fe9790ebedb1400885d086b10bead96ea1192f
+# Sender: bug-bash-request@gnu.org
+# From: bug-bash-request@gnu.org
+# 
+# If you reply to this message, keeping the Subject: header intact,
+# Mailman will discard the held message.  Do this if the message is
+# spam.  If you reply to this message and include an Approved: header
+# with the list password in it, the message will be approved for posting
+# to the list.  The Approved: header can also appear in the first line
+# of the body of the reply.
+ 

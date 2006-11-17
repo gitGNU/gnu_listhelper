@@ -1,0 +1,113 @@
+# SpamAssassin user preferences file.  See 'man Mail::SpamAssassin::Conf' for
+# details of what can be tweaked.
+###########################################################################
+
+# How many hits before a mail is considered spam.
+# required_hits		5
+
+# Whitelist and blacklist addresses are now file-glob-style patterns, so
+# "friend@somewhere.com", "*@isp.com", or "*.domain.net" will all work.
+# whitelist_from	someone@somewhere.com
+
+# Add your own customised scores for some tests below.  The default scores are
+# read from the installed spamassassin rules files, but you can override them
+# here.  To see the list of tests and their default scores, go to
+# http://spamassassin.org/tests.html .
+#
+# score SYMBOLIC_TEST_NAME n.nn
+
+# Trust the IP addresses of machines from here to the mailing list
+# machines.  Therefore this should include all mailing list servers.
+# FIXME: need to add tug.org network, currently only test1@tug.org
+trusted_networks 199.232.76.173  # monty-python.gnu.org
+trusted_networks 127/8
+trusted_networks 199.232.41.67  # nadesico.gnu.org
+trusted_networks 199.232.76.164  # fencepost.gnu.org
+trusted_networks 199.232.76.165  # lists.gnu.org
+trusted_networks 216.17.153.56/29  # proulx.com
+# trusted_networks 192.168.0.0/16  # proulx.com private network
+
+# Because there is no NFS involved we can speed things up by specifying
+# to use flock explicitly.
+lock_method flock
+
+# I am turning off the SA AWL feature.  Frankly it makes me nervous.
+# I think it is redundant with the Bayes engine.  I think it may react
+# as positive feedback in conjunction with the bayes engine.  I think
+# things work acceptably well without enabling it.
+#use_auto_whitelist 0
+
+# Stop SA from running bayes expires (takes long time) during message
+# handling.  This sometimes takes a couple of minutes to run causing
+# mail delivery timeouts so avoid it.  But then must have a cronjob to
+# run 'sa-learn --force-expire' every so often to expire tokens.
+bayes_auto_expire 0
+
+# Originals in SA-3.0.0
+# score BAYES_00 0 0 -1.665 -2.599
+# score BAYES_05 0 0 -0.925 -0.413
+# score BAYES_20 0 0 -0.730 -1.951
+# score BAYES_40 0 0 -0.276 -1.096
+# score BAYES_50 0 0 1.567 0.001
+# score BAYES_60 0 0 3.515 0.372
+# score BAYES_80 0 0 3.608 2.087
+# score BAYES_95 0 0 3.514 2.063
+# score BAYES_99 0 0 4.070 1.886
+
+# I moved BAYES_95 from 5 to 4 to help with the recent virus problem.
+#score BAYES_95 0 0 4.0 4.0
+#score BAYES_99 0 0 4.4 4.4
+
+# Original in 3.0.0:
+# score SPF_HELO_FAIL 0 0.405 0 0.001
+score SPF_HELO_FAIL  0 2.0 0 2.0
+
+score HTML_MESSAGE		0.5
+score MIME_HTML_ONLY            1.5
+
+# The high score here is due to a high negative bayes score.
+body MY_VIRUS_1 	/^ok ok ok,,,,, here is it/
+describe MY_VIRUS_1	Virus body signature
+score MY_VIRUS_1	10.0
+
+body MY_VIRUS_2 	/^Account and Password Information are attached/
+describe MY_VIRUS_2	Virus body signature
+score MY_VIRUS_2	10.0
+
+# The high score here is due to ALL_TRUSTED being -3.3 since mailman is
+# a local gnu.org message.  Plus high negative BAYES.
+header MAILMAN_1	Subject =~ /^Your message to .* awaits moderator approval/
+describe MAILMAN_1	Automated response from mailman
+score MAILMAN_1		15.0
+
+header MAILMAN_2	Subject =~ /^Last autoresponse notification for today/
+describe MAILMAN_2	Automated response from mailman
+score MAILMAN_2		5.0
+
+header SPAM_1	Subject =~ /^Neoprene Horse boot/
+describe SPAM_1 Neoprene Horse boot
+score SPAM_1	5.0
+
+header VIRUS_SUBJECT_LH1	Subject =~ /^It's \w+ :\)/
+describe VIRUS_SUBJECT_LH1      Virus signature subject
+score VIRUS_SUBJECT_LH1         1.5
+
+body VIRUS_BODY_LH1		/^Our Hottest pick this year!  Brand new issue Cana Petroleum!/
+describe VIRUS_BODY_LH1		Virus signature body
+score VIRUS_BODY_LH1		4.0
+
+body VIRUS_BODY_LH2		/^We called it yesterday and now it's up 100%!/
+describe VIRUS_BODY_LH2		Virus signature body
+score VIRUS_BODY_LH2		2.0
+
+body VIRUS_BODY_LH3		/^VERY tightly held, in a booming business sector/
+describe VIRUS_BODY_LH3		Virus signature body
+score VIRUS_BODY_LH3		2.0
+
+body VIRUS_BODY_LH4		/^In order to benefit from this lucrative opportunity/
+describe VIRUS_BODY_LH4		Virus signature body
+score VIRUS_BODY_LH4		2.0
+
+body VIRUS_BODY_LH5		/^THIS is the one you've been waiting for!/
+describe VIRUS_BODY_LH5		Virus signature body
+score VIRUS_BODY_LH5		2.0

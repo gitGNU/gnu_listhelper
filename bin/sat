@@ -1,0 +1,3 @@
+#!/bin/sh
+export LC_ALL=C
+spamassassin -d -t -D all,bayes 2>&1 | less

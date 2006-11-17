@@ -1,0 +1,52 @@
+#!/bin/sh
+
+MAILDIR=$HOME/Mail
+
+LOCK=/tmp/mail-learn-spam.lock
+
+# Check for stale locks.
+if [ -e $LOCK ]; then
+    if [ -n "$(find $LOCK -mtime +1 -print 2>/dev/null)" ]; then
+	: Older than one day.  Must be stale.  Complain.
+	echo "Old lock found.  Stale?" 1>&2
+	ls -ld $LOCK
+	exit 1
+    fi
+fi
+
+# Atomic test-and-set operation 'mkdir' used as a semaphore.
+if ! mkdir $LOCK 2>/dev/null; then
+  : Another process got the semaphore and is now running.  They run, we exit.
+  exit 0
+fi
+: Semaphore $LOCK created.
+
+# On exit remove the flag saying we are running.
+trap "rmdir $LOCK" EXIT
+
+for f in $(find $HOME/Mail/spam-new -name tmp -prune -o -type f -print | head -n 1000); do
+    : file $f
+    if sa-learn --spam < $f >/dev/null; then
+	msgid=$(formail -cx Message-ID < $f)
+	# Here is to hoping the message-id is a normal message-id.  It
+	# is created by spammers and virus writers and so I suspect
+	# the content characters could be unusual.  Think about the
+	# problem of if they used ".*" for a message-id.  That could
+	# confuse a standard RE grep.  Try to avoid that.
+	if [ -n "$msgid" ]; then
+	    mmfile=$(find $HOME/Mail/caughtham-mm -name tmp -prune -o -type f -print0 | xargs -r0 grep -F -l "$msgid")
+	    # Paranoia causes me to assume that we might hit several
+	    # messages, perhaps copies, and not just a single message.
+	    for file in $mmfile; do
+		if [ -n $file -a -f $file ]; then
+		    mailman-discard-nolearn < $file
+		fi
+	    done
+	fi
+	if safecat $MAILDIR/spam/tmp $MAILDIR/spam/new < $f >/dev/null; then
+	    rm -f $f
+	fi
+    fi
+done
+
+exit 0

@@ -1,0 +1,80 @@
+#!/bin/sh
+
+# red #FF0000
+# green #00FF00
+# blue #0000FF
+# cyan #00FFFF
+# magenta #FF00FF
+# yellow #FFFF00
+
+now=$(date -R)
+
+rrdtool graph $HOME/var/rate-hourly.png \
+    --title="4 Hours: List Helper Messages: $now" \
+    --vertical-label="msg/hour" \
+    --start $(date -d '-4 hour' +%s) --end $(date +%s) \
+    "DEF:mailcount=$HOME/var/mail.rrd:mailcount:AVERAGE" \
+    "DEF:spamcount=$HOME/var/mail.rrd:spamcount:AVERAGE" \
+    "DEF:hamcount=$HOME/var/mail.rrd:hamcount:AVERAGE" \
+    "DEF:listcount=$HOME/var/mail.rrd:listcount:AVERAGE" \
+    "CDEF:mailrate=mailcount,3600,*" \
+    "CDEF:spamrate=spamcount,3600,*" \
+    "CDEF:hamrate=hamcount,3600,*" \
+    "CDEF:listrate=listcount,3600,*" \
+    "AREA:spamrate#FF0000:Spam" \
+    "STACK:hamrate#0000FF:Non-Spam" \
+    "STACK:listrate#00FF00:List" \
+    > /dev/null
+
+rrdtool graph $HOME/var/rate-daily.png \
+    --title="Daily: List Helper Messages: $now" \
+    --vertical-label="msg/hour" \
+    --start $(date -d '-1 day' +%s) --end $(date +%s) \
+    "DEF:mailcount=$HOME/var/mail.rrd:mailcount:AVERAGE" \
+    "DEF:spamcount=$HOME/var/mail.rrd:spamcount:AVERAGE" \
+    "DEF:hamcount=$HOME/var/mail.rrd:hamcount:AVERAGE" \
+    "DEF:listcount=$HOME/var/mail.rrd:listcount:AVERAGE" \
+    "CDEF:mailrate=mailcount,3600,*" \
+    "CDEF:spamrate=spamcount,3600,*" \
+    "CDEF:hamrate=hamcount,3600,*" \
+    "CDEF:listrate=listcount,3600,*" \
+    "AREA:spamrate#FF0000:Spam" \
+    "STACK:hamrate#0000FF:Non-Spam" \
+    "STACK:listrate#00FF00:List" \
+    > /dev/null
+
+rrdtool graph $HOME/var/rate-weekly.png \
+    --title="Weekly: List Helper Messages: $now" \
+    --vertical-label="msg/hour" \
+    --start $(date -d '-7 day' +%s) --end $(date +%s) \
+    "DEF:mailcount=$HOME/var/mail.rrd:mailcount:AVERAGE" \
+    "DEF:spamcount=$HOME/var/mail.rrd:spamcount:AVERAGE" \
+    "DEF:hamcount=$HOME/var/mail.rrd:hamcount:AVERAGE" \
+    "DEF:listcount=$HOME/var/mail.rrd:listcount:AVERAGE" \
+    "CDEF:mailrate=mailcount,3600,*" \
+    "CDEF:spamrate=spamcount,3600,*" \
+    "CDEF:hamrate=hamcount,3600,*" \
+    "CDEF:listrate=listcount,3600,*" \
+    "AREA:spamrate#FF0000:Spam" \
+    "STACK:hamrate#0000FF:Non-Spam" \
+    "STACK:listrate#00FF00:List" \
+    > /dev/null
+
+rrdtool graph $HOME/var/rate-monthly.png \
+    --title="Monthly: List Helper Messages: $now" \
+    --vertical-label="msg/hour" \
+    --start $(date -d '-25 day' +%s) --end $(date +%s) \
+    "DEF:mailcount=$HOME/var/mail.rrd:mailcount:AVERAGE" \
+    "DEF:spamcount=$HOME/var/mail.rrd:spamcount:AVERAGE" \
+    "DEF:hamcount=$HOME/var/mail.rrd:hamcount:AVERAGE" \
+    "DEF:listcount=$HOME/var/mail.rrd:listcount:AVERAGE" \
+    "CDEF:mailrate=mailcount,3600,*" \
+    "CDEF:spamrate=spamcount,3600,*" \
+    "CDEF:hamrate=hamcount,3600,*" \
+    "CDEF:listrate=listcount,3600,*" \
+    "AREA:spamrate#FF0000:Spam" \
+    "STACK:hamrate#0000FF:Non-Spam" \
+    "STACK:listrate#00FF00:List" \
+    > /dev/null
+
+exit 0
