@@ -92,6 +92,19 @@ incr_mail_count()
     expr $(<$HOME/Mail/counter) + 1 >$HOME/Mail/counter
 }
 
+# The idea here is that if the mailman machine monty-python already
+# scored the message as spam then just go with it and avoid running it
+# through spamassassin again here.
+
+run_montypython_check()
+{
+    if grep -q "^X-Spam-Checker-Version: .* on monty-python" msg2.1; then
+	if grep -q "^X-Spam-Flag: YES" msg2.1; then
+	    isspam=true
+	fi
+    fi
+}
+
 run_spamassassin_check()
 {
     $isspam && : msg is spam || : msg is not spam
@@ -106,6 +119,8 @@ run_spamassassin_check()
 incr_mail_count
 
 isspam=false
+
+$isspam || run_montypython_check
 
 $isspam || run_spamassassin_check
 
