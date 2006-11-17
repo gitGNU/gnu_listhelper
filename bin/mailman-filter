@@ -61,37 +61,63 @@ if [ ! -s msg2.1 ]; then
     exit 1
 fi
 
-# Try to work in cubby.  Not fully fleshed out yet.
-# sa -C $HOME/mailman-gnu -p $HOME/mailman-gnu/user_prefs -t -L < msg2.1
-
-if ! spamassassin < msg2.1 > msg2.2; then
-    exit 1
-fi
-
-# If we need the message-id.
-# msgid=$(awk '/^Subject: confirm/{print$NF;exit}' msg3.1)
-
-# Keep some message stats for later graphing.
-if [ ! -f $HOME/Mail/counter ]; then
-    echo 0 > $HOME/Mail/counter
-fi
-expr $(<$HOME/Mail/counter) + 1 >$HOME/Mail/counter
-
-if grep -q "^X-Spam-Flag: YES" msg2.2; then
-    FOLDER=$HOME/Mail/caughtspam
+generate_discard_reply()
+{
     # Reply to the mailman message with the discard command for that md5sum.
     formail -r < msg3.1 | sendmail -t -oi
+}
+
+incr_spam_count()
+{
     if [ ! -f $HOME/Mail/spamcounter ]; then
 	echo 0 > $HOME/Mail/spamcounter
     fi
     expr $(<$HOME/Mail/spamcounter) + 1 >$HOME/Mail/spamcounter
-else
-    FOLDER=$HOME/Mail/caughtham
+}
+
+incr_nonspam_count()
+{
     if [ ! -f $HOME/Mail/hamcounter ]; then
 	echo 0 > $HOME/Mail/hamcounter
     fi
     expr $(<$HOME/Mail/hamcounter) + 1 >$HOME/Mail/hamcounter
+}
+
+incr_mail_count()
+{
+    # Keep some message stats for later graphing.
+    if [ ! -f $HOME/Mail/counter ]; then
+	echo 0 > $HOME/Mail/counter
+    fi
+    expr $(<$HOME/Mail/counter) + 1 >$HOME/Mail/counter
+}
+
+run_spamassassin_check()
+{
+    $isspam && : msg is spam || : msg is not spam
+    if ! spamassassin < msg2.1 > msg2.2; then
+	exit 1
+    fi
+    if grep -q "^X-Spam-Flag: YES" msg2.2; then
+	isspam=true
+    fi
+}
+
+incr_mail_count
+
+isspam=false
+
+$isspam || run_spamassassin_check
+
+if $isspam; then
+    FOLDER=$HOME/Mail/caughtspam
+    generate_discard_reply
+    incr_spam_count
+else
+    FOLDER=$HOME/Mail/caughtham
+    incr_nonspam_count
 fi
+
 mkdir -p $FOLDER/tmp $FOLDER/new $FOLDER/cur
 chmod a+r $FOLDER/new/$(safecat $FOLDER/tmp $FOLDER/new < msg2.2)
 
