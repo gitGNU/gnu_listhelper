@@ -98,8 +98,8 @@ incr_mail_count()
 
 run_montypython_check()
 {
-    if grep -q "^X-Spam-Checker-Version: .* on monty-python" msg2.1; then
-	if grep -q "^X-Spam-Flag: YES" msg2.1; then
+    if sed '/^$/q' msg0 | grep -q "^X-Spam-Checker-Version: .* on monty-python"; then
+	if sed '/^$/q' msg0 | grep -q "^X-Spam-Flag: YES"; then
 	    isspam=true
 	fi
     fi
