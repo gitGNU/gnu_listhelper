@@ -5,6 +5,12 @@
 # How many hits before a mail is considered spam.
 # required_hits		5
 
+# With some reservation I am acting on Karl's request to reduce the
+# trigger threshold to 4.5.  I am a little worried about false
+# positives.  We will see how it goes.
+
+required_hits		4.5
+
 # Whitelist and blacklist addresses are now file-glob-style patterns, so
 # "friend@somewhere.com", "*@isp.com", or "*.domain.net" will all work.
 # whitelist_from	someone@somewhere.com
