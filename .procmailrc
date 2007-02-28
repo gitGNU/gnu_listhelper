@@ -47,43 +47,6 @@ honeypot/
 #:0Aw:serialize.lock
 #| mailman-discard-nolearn || exit 75
 
-# Special to avoid full spamassassin processing on known signature.
-:0HB:
-* ^Subject: [^ ]+$
-* ^In order to benefit from this lucrative opportunity you need
-* ^to get in now, before the big news release.
-spam-new/
-
-:0HB:
-* ^Subject: [^ ]+$
-* ^One of the key rules every good trader knows is volume
-* ^before price.  Once the volume is there the price will
-spam-new/
-
-:0HB:
-* ^Subject: [^ ]+$
-* ^Members, are you tired of your investments bringing you only a few
-* ^are bringing you a company which is just the thing for an investor looking
-spam-new/
-
-:0HB:
-* ^Subject: hi it's [^ ]+$
-* ^TheSubway com Post its Hot Stock List and MPRG
-* ^Its no wonder MPRG has hit the Hot Stock List
-spam-new/
-
-# Special to avoid full spamassassin processing on known signature.
-:0HB
-* 1^0 ^Subject: CardDebtFree Overnight
-* 1^0 ^Subject: Completely CreditCardDebtFree Overnight
-* 1^0 ^Subject: CreditCardDebtFree Overnight
-* 1^0 ^Subject: DebtFree Immediately
-* 1^0 ^Subject: Fully DebtFree Immediately
-* 1^0 ^Subject: OutOfDebt Overnight
-* 1^0 ^Subject: Totally OutOfDebt Overnight
-* 1^0 ^Subject: TotallyCardDebtFree Overnight
-spam-new/
-
 ## Chain on the previous rule ('A' flag).
 #:0Aw:serialize.lock
 #| mailman-discard-nolearn || exit 75
