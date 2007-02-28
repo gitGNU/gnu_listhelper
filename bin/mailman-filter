@@ -18,6 +18,11 @@
 # classifies the message as spam then a control message back to
 # mailman is generated to discard the spam.
 
+# Set MAX_CROSSPOST to indicate the maximum number of times an
+# identical message may be seen before it is considered spam by the
+# crossassassin feature.
+MAX_CROSSPOST=5
+
 export LC_ALL=C			# Ensure a standard sort behavior.
 umask 02			# Set up for group sharing.
 PATH=$PATH:/usr/sbin:/sbin	# for sendmail et al
@@ -101,6 +106,10 @@ run_montypython_check()
     if sed '/^$/q' msg0 | grep -q "^X-Spam-Checker-Version: .* on monty-python"; then
 	if sed '/^$/q' msg0 | grep -q "^X-Spam-Flag: YES"; then
 	    isspam=true
+	    # If the spam level is 10 or greater than it is very spammy.
+	    if sed '/^$/q' msg0 | grep -E -q "^X-Spam-Level: \*{10}"; then
+		isveryspammy=true
+	    fi
 	fi
     fi
 }
@@ -113,6 +122,16 @@ run_spamassassin_check()
     fi
     if grep -q "^X-Spam-Flag: YES" msg2.2; then
 	isspam=true
+	# SA says this is spam.  Cache the message digest for future use.
+	mkdir -p $DIGEST_DIR
+	if [ ! -f $DIGEST_DIR/$DIGEST_FILE ]; then
+	    echo 0 >$DIGEST_DIR/$DIGEST_FILE
+	fi
+	expr $(<$DIGEST_DIR/$DIGEST_FILE) + 10 >$DIGEST_DIR/$DIGEST_FILE
+	# If the spam level is 10 or greater than it is very spammy.
+	if sed '/^$/q' msg2.2 | grep -E -q "^X-Spam-Level: \*{10}"; then
+	    isveryspammy=true
+	fi
     fi
 }
 
@@ -121,13 +140,25 @@ filter_body()
     sed '1,/^$/d' msg2.1
 }
 
+check_msg_contents()
+{
+    if ! filter_body | cat -s | grep -q .; then
+	: empty message
+	isspam=true
+    fi
+    if grep -q -E -f $HOME/etc/blacklist-body msg2.1; then
+	: Matched known spam URL in message body.
+	isspam=true
+    fi
+}
+
 check_msg_digests()
 {
     DIGEST=$(filter_body | md5sum | awk '{print$1}')
     DIGEST_DIR=$HOME/var/digests/$(echo $DIGEST | sed 's/^\(..\).*/\1/')
     DIGEST_FILE=$(echo $DIGEST | sed 's/^..//')
     if [ -f $DIGEST_DIR/$DIGEST_FILE ]; then
-	if [ $(<$DIGEST_DIR/$DIGEST_FILE) -gt 7 ]; then
+	if [ $(<$DIGEST_DIR/$DIGEST_FILE) -gt $MAX_CROSSPOST ]; then
 	    isspam=true
 	fi
     fi
@@ -135,6 +166,12 @@ check_msg_digests()
 
 incr_msg_digests()
 {
+    if [ -z "$DIGEST_DIR" ]; then
+	# If check_msg_contents hit then this calculation was skipped.
+	DIGEST=$(filter_body | md5sum | awk '{print$1}')
+	DIGEST_DIR=$HOME/var/digests/$(echo $DIGEST | sed 's/^\(..\).*/\1/')
+	DIGEST_FILE=$(echo $DIGEST | sed 's/^..//')
+    fi
     mkdir -p $DIGEST_DIR
     if [ ! -f $DIGEST_DIR/$DIGEST_FILE ]; then
 	echo 0 >$DIGEST_DIR/$DIGEST_FILE
@@ -145,6 +182,9 @@ incr_msg_digests()
 incr_mail_count
 
 isspam=false
+isveryspammy=false
+
+check_msg_contents
 
 $isspam || check_msg_digests
 
@@ -152,12 +192,17 @@ $isspam || run_montypython_check
 
 $isspam || run_spamassassin_check
 
-$isspam && incr_msg_digests
+incr_msg_digests
 
 if $isspam; then
     FOLDER=$HOME/Mail/caughtspam
     generate_discard_reply
     incr_spam_count
+    if $isveryspammy; then
+	# If the message is very spammy they take it straight to the archive
+	# so that humans won't need to review it.
+	FOLDER=$HOME/Mail/caughtspam-archive
+    fi
 else
     FOLDER=$HOME/Mail/caughtham
     incr_nonspam_count
