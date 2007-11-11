@@ -22,6 +22,7 @@ set fast_reply=yes
 set pipe_decode=no
 set read_inc=0
 set write_inc=0
+set pager_index_lines=8
 
 set header_cache="~/var/headercache"
 set maildir_header_cache_verify=no
