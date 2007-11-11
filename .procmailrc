@@ -13,6 +13,10 @@ UMASK=02
 * ^X-Original-To: listhelper-honeypot
 honeypot/
 
+:0
+* ^X-Original-To: listhelper-obsolete
+obsolete/
+
 # Mail to the moderators.  Process and handle.  SpamAssassin is run
 # from this script after unpacking the attached message.
 
