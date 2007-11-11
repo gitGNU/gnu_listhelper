@@ -22,6 +22,7 @@
 # identical message may be seen before it is considered spam by the
 # crossassassin feature.
 MAX_CROSSPOST=5
+# This value is also used in honeypot-learn-spam
 
 export LC_ALL=C			# Ensure a standard sort behavior.
 umask 02			# Set up for group sharing.

@@ -11,11 +11,10 @@ if [ ! -t 0 ]; then
     exec >$LOGFILE 2>&1 </dev/null
 fi
 
-honeypot-process-spam
-mail-learn-spam
+find $HOME/var/digests -type f -mtime +120 -exec rm -f {} +
 
 if [ -s $LOGFILE ]; then
-    mailx -s "cronscript output" $NOTIFY_ADDR < $LOGFILE
+    mailx -s "digest-clean output" $NOTIFY_ADDR < $LOGFILE
 fi
 
 exit 0

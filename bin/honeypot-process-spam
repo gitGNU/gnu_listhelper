@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# There are many honeypots that do not recieve value email.  Those do
+# not need to be run through SpamAssassin and can be used to populate
+# md5 digests of known spam mail.
+
+# This is designed a script to run from cron, cleaning a spool
+# directory of incoming mail.  This handles the cron, overruns, and
+# calls honeypot-learn-spam to do the real work.
+
+export LC_ALL=C
+umask 02
+
+MAILDIR=$HOME/Mail
+
+LOCK=/tmp/honeypot-learn-spam.lock
+
+# Check for stale locks.
+if [ -e $LOCK ]; then
+    if [ -n "$(find $LOCK -mtime +1 -print 2>/dev/null)" ]; then
+	: Older than one day.  Must be stale.  Complain.
+	echo "Old lock found.  Stale?" 1>&2
+	ls -ld $LOCK
+	exit 1
+    fi
+fi
+
+# Atomic test-and-set operation 'mkdir' used as a semaphore.
+if ! mkdir $LOCK 2>/dev/null; then
+  : Another process got the semaphore and is now running.  They run, we exit.
+  exit 0
+fi
+: Semaphore $LOCK created.
+
+# On exit remove the flag saying we are running.
+cleanup()
+{
+    cd /
+    rmdir $LOCK
+    rm -rf $TMPDIR
+}
+trap "cleanup" EXIT
+
+TMPDIR=$(mktemp -d) || exit 1
+
+cd $TMPDIR || exit 1
+
+# No need to worry about spaces in filenames here...
+# Just do a thousand or so every run until it is empty as a simple way
+# to avoid ARG_MAX issues.
+HONEYPOT_MAIL_DIRS="$HOME/Mail/honeypot/new $HOME/Mail/honeypot/cur"
+find $HONEYPOT_MAIL_DIRS -type f -exec honeypot-learn-spam {} +
+
+exit 0

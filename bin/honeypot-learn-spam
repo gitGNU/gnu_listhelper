@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# There are many honeypots that do not recieve value email.  Those do
+# not need to be run through SpamAssassin and can be used to populate
+# md5 digests of known spam mail.
+
+# This value is also used in mailman-filter.
+MAX_CROSSPOST=5
+
+DIGEST_HOME=$HOME/var/digests
+
+trap 'rm -f $TMPFILE' EXIT
+TMPFILE=$(mktemp) || exit 1
+
+if [ $# -lt 1 ]; then
+    echo "Error: Missing mail file arguments" 1>&2
+    exit 1
+fi
+
+for file in "$@"; do
+
+    if [ ! -f "$file" ]; then
+	continue
+    fi
+
+    # Just the message body md5sum, not including the message headers.
+    if ! sed '1,/^$/d' < "$file" > $TMPFILE; then
+	exit 1
+    fi
+    DIGEST=$(md5sum < $TMPFILE | awk '{print$1}')
+    DIGEST_DIR=$DIGEST_HOME/$(echo $DIGEST | sed 's/^\(..\).*/\1/')
+    DIGEST_FILE=$(echo $DIGEST | sed 's/^..//')
+    mkdir -p $DIGEST_DIR
+
+    # Try to keep the digest file count reasonable.  This is pretty
+    # arbitrary code here.  If we have never seen the message before
+    # then hit the count with 1000 and don't worry about it.  But if
+    # we have seen it then as long as it is already being discarded by
+    # being over the crosspost limit then do nothing.  Otherwise hit
+    # it with 1000 again.
+    if [ ! -f $DIGEST_DIR/$DIGEST_FILE ]; then
+	echo 1000 >$DIGEST_DIR/$DIGEST_FILE
+    else
+	DIGEST_COUNT=$(<$DIGEST_DIR/$DIGEST_FILE)
+	if [ $DIGEST_COUNT -lt $MAX_CROSSPOST ]; then
+	    echo 1000 >$DIGEST_DIR/$DIGEST_FILE
+	fi
+    fi
+
+    rm -f "$file"
+
+done
+
+exit 0
