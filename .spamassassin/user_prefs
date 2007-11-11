@@ -6,10 +6,10 @@
 # required_hits		5
 
 # With some reservation I am acting on Karl's request to reduce the
-# trigger threshold to 4.5.  I am a little worried about false
+# trigger threshold from 5.0.  I am a little worried about false
 # positives.  We will see how it goes.
 
-required_hits		4.5
+required_hits		4.4
 
 # Whitelist and blacklist addresses are now file-glob-style patterns, so
 # "friend@somewhere.com", "*@isp.com", or "*.domain.net" will all work.
@@ -49,24 +49,38 @@ lock_method flock
 # run 'sa-learn --force-expire' every so often to expire tokens.
 bayes_auto_expire 0
 
-# Originals in SA-3.0.0
-# score BAYES_00 0 0 -1.665 -2.599
-# score BAYES_05 0 0 -0.925 -0.413
-# score BAYES_20 0 0 -0.730 -1.951
-# score BAYES_40 0 0 -0.276 -1.096
-# score BAYES_50 0 0 1.567 0.001
-# score BAYES_60 0 0 3.515 0.372
-# score BAYES_80 0 0 3.608 2.087
-# score BAYES_95 0 0 3.514 2.063
-# score BAYES_99 0 0 4.070 1.886
+# score tag -bayes-net -bayes+net +bayes-net +bayes+net
 
-# I moved BAYES_95 from 5 to 4 to help with the recent virus problem.
-#score BAYES_95 0 0 4.0 4.0
-#score BAYES_99 0 0 4.4 4.4
+# Originals in SA-3.0.0
+#  score BAYES_00 0 0 -1.665 -2.599
+#  score BAYES_05 0 0 -0.925 -0.413
+#  score BAYES_20 0 0 -0.730 -1.951
+#  score BAYES_40 0 0 -0.276 -1.096
+#  score BAYES_50 0 0 1.567 0.001
+#  score BAYES_60 0 0 3.515 0.372
+#  score BAYES_80 0 0 3.608 2.087
+#  score BAYES_95 0 0 3.514 2.063
+#  score BAYES_99 0 0 4.070 1.886
+# Originals in SA-3.1.7, notice the loss of differentiation
+# for when the network tests is not available.
+#  score BAYES_00 0.0001 0.0001 -2.312 -2.599
+#  score BAYES_05 0.0001 0.0001 -1.110 -1.110
+#  score BAYES_20 0.0001 0.0001 -0.740 -0.740
+#  score BAYES_40 0.0001 0.0001 -0.185 -0.185
+#  score BAYES_50 0.0001 0.0001 0.001 0.001
+#  score BAYES_60 0.0001 0.0001 1.0 1.0
+#  score BAYES_80 0.0001 0.0001 2.0 2.0
+#  score BAYES_95 0.0001 0.0001 3.0 3.0
+#  score BAYES_99 0.0001 0.0001 3.5 3.5
 
 # Original in 3.0.0:
 # score SPF_HELO_FAIL 0 0.405 0 0.001
 score SPF_HELO_FAIL  0 2.0 0 2.0
+
+Original in 3.1.7:
+# score TVD_PDF_FINGER01 1.0
+# This seems unlikely to cause false positives and so am increasing it.
+score TVD_PDF_FINGER01 4.5
 
 score HTML_MESSAGE		0.5
 score MIME_HTML_ONLY            1.5
@@ -93,6 +107,34 @@ score MAILMAN_2		5.0
 header SPAM_1	Subject =~ /^Neoprene Horse boot/
 describe SPAM_1 Neoprene Horse boot
 score SPAM_1	5.0
+
+body SPAM_2	/^Attached find .*\.pdf;/
+describe SPAM_2 PDF Stock Spam
+score SPAM_2	4.5
+
+body SPAM_3	/^your request processed .*\.pdf;/
+describe SPAM_3 PDF Stock Spam
+score SPAM_3	4.5
+
+body SPAM_4	/^Find attachement .*\.pdf;/
+describe SPAM_4 PDF Stock Spam
+score SPAM_4	4.5
+
+body SPAM_5	/^Requested File .*\.pdf;/
+describe SPAM_5 PDF Stock Spam
+score SPAM_5	4.5
+
+body SPAM_6	/^Your Request is attached .*\.pdf;/
+describe SPAM_6 PDF Stock Spam
+score SPAM_6	4.5
+
+body SPAM_7	/^Please find Attached .*\.pdf;/
+describe SPAM_7 PDF Stock Spam
+score SPAM_7	4.5
+
+body SPAM_8	/^As Per request .*\.pdf;/
+describe SPAM_8 PDF Stock Spam
+score SPAM_8	4.5
 
 header VIRUS_SUBJECT_LH1	Subject =~ /^It's \w+ :\)/
 describe VIRUS_SUBJECT_LH1      Virus signature subject
