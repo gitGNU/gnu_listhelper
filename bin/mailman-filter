@@ -147,8 +147,13 @@ check_msg_contents()
 	isspam=true
     fi
     if grep -q -E -f $HOME/etc/blacklist-body msg2.1; then
-	: Matched known spam URL in message body.
+	: Matched known spam in message body.
 	isspam=true
+    fi
+    if grep -q -E -f $HOME/etc/whitelist-body msg2.1; then
+	: Matched known non-spam in message body.
+	isspam=false
+	whitelisted=true
     fi
 }
 
@@ -183,16 +188,25 @@ incr_mail_count
 
 isspam=false
 isveryspammy=false
+whitelisted=false
 
 check_msg_contents
 
-$isspam || check_msg_digests
+if ! $isspam && ! $whitelisted; then
+    check_msg_digests
+fi
 
-$isspam || run_montypython_check
+if ! $isspam && ! $whitelisted; then
+    run_montypython_check
+fi
 
-$isspam || run_spamassassin_check
+if ! $isspam && ! $whitelisted; then
+    run_spamassassin_check
+fi
 
-incr_msg_digests
+if ! $whitelisted; then
+    incr_msg_digests
+fi
 
 if $isspam; then
     FOLDER=$HOME/Mail/caughtspam
@@ -204,8 +218,12 @@ if $isspam; then
 	FOLDER=$HOME/Mail/caughtspam-archive
     fi
 else
-    FOLDER=$HOME/Mail/caughtham
     incr_nonspam_count
+    if $whitelisted; then
+	FOLDER=$HOME/Mail/OLD/caughtham
+    else
+	FOLDER=$HOME/Mail/caughtham
+    fi
 fi
 
 if [ -f msg2.2 ]; then
