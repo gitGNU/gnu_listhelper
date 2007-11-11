@@ -9,7 +9,7 @@ fi
 
 cd $HOME/Mail || exit 1
 
-find caughtspam/cur -type f -print0 | xargs -r0 mv --target-directory=caughtspam-archive/cur/
+find caughtspam/cur -type f -exec mv --target-directory=caughtspam-archive/cur/ {} +
 
 mkdir -p \
   OLD/administrivia/cur \
@@ -45,6 +45,6 @@ find \
   -type f -mtime +4 -printf "mv %p OLD/%p\n" \
   | sh
 
-find OLD -type f -mtime +14 -print0 | xargs -r0 rm -f
+find OLD -type f -mtime +14 -exec rm -f {} +
 
 exit 0
