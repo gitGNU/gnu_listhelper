@@ -34,7 +34,7 @@ for f in $(find $HOME/Mail/spam-new -name tmp -prune -o -type f -print | head -n
 	# problem of if they used ".*" for a message-id.  That could
 	# confuse a standard RE grep.  Try to avoid that.
 	if [ -n "$msgid" ]; then
-	    mmfile=$(find $HOME/Mail/caughtham-mm -name tmp -prune -o -type f -print0 | xargs -r0 grep -F -l "$msgid")
+	    mmfile=$(find $HOME/Mail/caughtham-mm -name tmp -prune -o -type f -exec grep -F -l "$msgid" {} +)
 	    # Paranoia causes me to assume that we might hit several
 	    # messages, perhaps copies, and not just a single message.
 	    for file in $mmfile; do
