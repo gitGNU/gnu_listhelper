@@ -66,6 +66,14 @@ honeypot/
 * ^Subject: .* post from
 | mailman-filter || exit 75
 
+# Example:
+#   Subject: =?iso-8859-1?q?El_envio_a_GNUGNU_de_ansjohn=5F53=40hotmail=2Ecom?=
+#   	=?iso-8859-1?q?_precisa_de_aprobacion?=
+:0w:serialize.lock
+* ^X-List-Administrivia: yes
+* ^Subject: .*El[ _]envio[ _]a[ _].*[ _]precisa[ _]de[ _]aprobacion
+| mailman-filter || exit 75
+
 # Added and combined with other List-Administrivia patterns.
 # Example for the regular expression match:
 #   Subject: 1 bug-gnu-utils moderator request(s) waiting
@@ -81,6 +89,24 @@ honeypot/
   * 1^0 ^Subject: Last autoresponse notification for today
   * 1^0 ^Subject: [-a-zA-Z0-9]+ subscription notification
   * 1^0 ^Subject: [-a-zA-Z0-9]+ unsubscribe notification
+  # Example spanish The results of your email commands
+  # Subject: =?iso-8859-1?q?Resultados_de_los_comandos_enviados_por_correo_el?=
+  #  =?iso-8859-1?q?ectronico?=
+  * 1^0 ^Subject: .*Notificaci.*n_de_suscripci.*n
+  # Subject: =?iso-8859-1?q?Notificaci=F3n_de_desuscripci=F3n_a_Radius-espano?=
+  #  =?iso-8859-1?q?l?=
+  # Subject: =?iso-8859-1?q?fsfe-de_unsubscribe_notification?=
+  * 1^0 ^Subject: .*unsubscribe.notification
+  * 1^0 ^Subject: .*Notificaci.*n_de_desuscripci.*n
+  * 1^0 ^Subject: .*Resultados_de_los_comandos_enviados_por_correo_el
+  # Subject: =?iso-8859-1?q?notification_d=27abonnement_de_lilypond-user-fr?=
+  * 1^0 ^Subject: .*notification.d.*abonnement_de_
+  # Subject: =?iso-8859-1?q?notification_de_r=E9siliation_de_lilypond-user-fr?=
+  * 1^0 ^Subject: .*notification.de.r.*siliation.de
+  # Subject: M-Zltima notificaciM-sn de autorespuesta de hoy
+  * 1^0 ^Subject: .*tima.notificaci.*de.autorespuesta.de.hoy
+  # =?iso-8859-1?q?notifica=E7=E3o_de_inscri=E7=E0o_de_Esteban-users?=
+  * 1^0 Subject: .*notifica..o_de_inscri._o_de
   /dev/null
 
   :0
