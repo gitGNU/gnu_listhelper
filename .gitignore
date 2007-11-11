@@ -11,6 +11,7 @@ bayes_toks
 .emacs.d
 .forward
 .gnupg
+.gitignore
 .htoprc
 .mailcap
 .screenrc
@@ -34,3 +35,7 @@ bin/mail-trial.rb
 bin/mailman-dump
 bin/mailman-dump.rb
 bin/mailman-filter-hacking
+.hushlogin
+.lesshst
+etc
+sent
