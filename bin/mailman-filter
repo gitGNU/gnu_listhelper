@@ -145,15 +145,18 @@ check_msg_contents()
     if ! filter_body | cat -s | grep -q .; then
 	: empty message
 	isspam=true
+	return
     fi
     if grep -q -E -f $HOME/etc/blacklist-body msg2.1; then
 	: Matched known spam in message body.
 	isspam=true
+	return
     fi
     if grep -q -E -f $HOME/etc/whitelist-body msg2.1; then
 	: Matched known non-spam in message body.
 	isspam=false
 	whitelisted=true
+	return
     fi
 }
 
