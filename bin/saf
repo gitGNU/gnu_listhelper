@@ -1,11 +1,27 @@
 #!/bin/sh
+
+# In mutt it is much easier to say "|saf" than to say "|sa-learn --forget".
+
 export LC_ALL=C
-sa-learn --forget "$@"
+
+# Configure how sa-learn will be run.
+#sa_learn_forget="sa-learn --forget"
+sa_learn_forget="spamc -x -d 192.168.1.113 --learntype=forget"
+
+$sa_learn_forget "$@"
 exit 0
 
-# Is is possible to reprocess this message?  Not quite yet.
-#trap 'rm -f $TMPFILE' EXIT
-#TMPFILE=$(mktemp) || exit 1
-#cat >$TMPFILE || exit 1
-#sa-learn --spam <$TMPFILE || exit 1
-#mailman-filter <$TMPFILE || exit 1
+# Copyright 2006, 2008 Bob Proulx <bob@proulx.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.

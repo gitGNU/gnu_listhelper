@@ -3,6 +3,21 @@
 # The mailboxes would grow without bounds unless pruned.
 # Archive the mail into the OLD directory.
 
+# Copyright 2006, 2007, 2008 Bob Proulx <bob@proulx.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 if [ ! -t 0 ]; then
     exec >/tmp/archive-mail.out 2>&1
 fi
@@ -21,6 +36,9 @@ mkdir -p \
   OLD/caughtham/cur \
   OLD/caughtham/new \
   OLD/caughtham/tmp \
+  OLD/caughtspam-archive-mm/cur \
+  OLD/caughtspam-archive-mm/new \
+  OLD/caughtspam-archive-mm/tmp \
   OLD/caughtspam-archive/cur \
   OLD/caughtspam-archive/new \
   OLD/caughtspam-archive/tmp \
@@ -39,6 +57,7 @@ find \
   caughtham \
   caughtham-mm \
   caughtspam-archive \
+  caughtspam-archive-mm \
   caughtspam-mm \
   spam \
   would-discard \
@@ -46,5 +65,7 @@ find \
   | sh
 
 find OLD -type f -mtime +14 -exec rm -f {} +
+
+find Lists -type f -mtime +14 -exec rm -f {} +
 
 exit 0

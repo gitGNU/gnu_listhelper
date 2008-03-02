@@ -1,15 +1,16 @@
 #!/bin/sh
 
-# In mutt it is much easier to say "|sas" than to say "|sa-learn --spam".
+# Let's see who is using this...
 
-export LC_ALL=C
+# This script is run by procmail with a lockfile so that only one copy
+# can ever run at the time.
 
-# Configure how sa-learn will be run.
-#sa_learn_spam="sa-learn --spam"
-sa_learn_spam="spamc -x -d 192.168.1.113 --learntype=spam"
-
-$sa_learn_spam "$@"
-
+# The message comes in on stdin.
+line="$(grep ^X-BeenThere:)"
+if grep -F -q -x "$line" $HOME/log/site-tracking; then
+    echo "$line" >> $HOME/log/site-tracking
+    sort -u -o $HOME/log/site-tracking $HOME/log/site-tracking
+fi
 exit 0
 
 # Copyright 2006, 2008 Bob Proulx <bob@proulx.com>

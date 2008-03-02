@@ -1,12 +1,27 @@
 #!/bin/sh
 
-# There are many honeypots that do not recieve value email.  Those do
+# There are many honeypots that do not receive valid email.  Those do
 # not need to be run through SpamAssassin and can be used to populate
 # md5 digests of known spam mail.
-
+#
 # This is designed a script to run from cron, cleaning a spool
 # directory of incoming mail.  This handles the cron, overruns, and
 # calls honeypot-learn-spam to do the real work.
+
+# Copyright 2006, 2007, 2008 Bob Proulx <bob@proulx.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 export LC_ALL=C
 umask 02
@@ -41,13 +56,11 @@ cleanup()
 }
 trap "cleanup" EXIT
 
-TMPDIR=$(mktemp -d) || exit 1
+TMPDIR=$(mktemp -d -t honeypot-process-spam.XXXXXXXX) || exit 1
 
 cd $TMPDIR || exit 1
 
 # No need to worry about spaces in filenames here...
-# Just do a thousand or so every run until it is empty as a simple way
-# to avoid ARG_MAX issues.
 HONEYPOT_MAIL_DIRS="$HOME/Mail/honeypot/new $HOME/Mail/honeypot/cur"
 find $HONEYPOT_MAIL_DIRS -type f -exec honeypot-learn-spam {} +
 

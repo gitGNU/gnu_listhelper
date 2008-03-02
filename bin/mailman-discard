@@ -1,14 +1,33 @@
-#!/bin/sh -x
+#!/bin/sh
 
 # This script reads a mailman moderator message on stdin, trains on it
 # as spam, and generates a discard message back to mailman.
+
+# Copyright 2006, 2007, 2008 Bob Proulx <bob@proulx.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Configure how sa-learn will be run.
+#sa_learn_spam="sa-learn --spam"
+sa_learn_spam="spamc -x -d 192.168.1.113 --learntype=spam"
 
 export LC_ALL=C
 umask 02
 PATH=$PATH:/usr/sbin:/sbin	# for sendmail et al
 
 trap 'cd / ; rm -rf $TMPDIR' EXIT
-TMPDIR=$(mktemp -d) || exit 1
+TMPDIR=$(mktemp -d -t mailman-discard.XXXXXXXX) || exit 1
 
 cd $TMPDIR || exit 1
 
@@ -54,7 +73,7 @@ fi
 # Reply to the mailman message with the discard command for that md5sum.
 formail -r < msg3.1 | sendmail -t -oi
 
-sa-learn --spam < msg2.1
+$sa_learn_spam < msg2.1
 
 exit 0
 

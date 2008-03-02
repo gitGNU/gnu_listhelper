@@ -1,17 +1,51 @@
 #!/bin/sh
 
+# This script is called by cron to clean the database of old
+# previously seen message digests.
+
+# Copyright 2006, 2007, 2008 Bob Proulx <bob@proulx.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 NOTIFY_ADDR=bob
 
 PATH=$HOME/bin:/usr/local/bin:$PATH
 
 trap 'rm -f $LOGFILE' EXIT
-LOGFILE=$(mktemp) || exit 1
+LOGFILE=$(mktemp -t digest-clean.XXXXXXXX) || exit 1
 
 if [ ! -t 0 ]; then
     exec >$LOGFILE 2>&1 </dev/null
 fi
 
-find $HOME/var/digests -type f -mtime +120 -exec rm -f {} +
+starttime=$(date +%s)
+find $HOME/var/digests -type f -mtime +45 -exec rm -f {} +
+endtime=$(date +%s)
+
+elapsed=$(( $endtime - $starttime ))
+
+# Normally the find can scan 500,000 files in less than a couple of
+# seconds.  But if the machine is run out of available memory then the
+# buffer cache is defeated and this runs at disk speeds which is very
+# slow.  Everything runs very slow.  The machine melts down.  Use this
+# as an indication of the problem and make noise so that I hear about
+# the problem and then the problem can be fixed.
+
+trigger=200
+if [ $elapsed -gt $trigger ]; then
+    echo "Warning: Listhelper digest cleanup took $elapsed seconds."
+fi
 
 if [ -s $LOGFILE ]; then
     mailx -s "digest-clean output" $NOTIFY_ADDR < $LOGFILE

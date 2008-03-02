@@ -1,3 +1,20 @@
+# Mutt Configuration
+
+# Copyright 2006, 2007, 2008 Bob Proulx <bob@proulx.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 # auto_view multipart/mixed
 
 # set spoolfile="~/Mail/Maildir" # Must match ~/.procmailrc default folder
@@ -51,6 +68,8 @@ bind pager <down> next-line
 
 folder-hook . 'macro index "H" "|sah\nt;WN;s=ham\n" "Relearn and file as HAM"'
 folder-hook . 'macro index "S" "s=spam-new\n" "Relearn and file as SPAM"'
+# FIXME: Find a way to unmacro this key in other contexts.
+folder-hook caughtspam 'macro index "Y" "l~N\nl~N\n1\nT~N\n;N;t" "Mark all files as read"'
 
 folder-hook caughtham-mm 'macro index "S" "|mailman-known-spam\ns=spam-mm\n" "Process mailman spam"'
 folder-hook caughtham-mm 'macro pager "S" "|mailman-known-spam\ns=spam-mm\n" "Process mailman spam"'

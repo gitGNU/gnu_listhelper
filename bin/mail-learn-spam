@@ -1,15 +1,58 @@
 #!/bin/sh
 
-MAILDIR=$HOME/Mail
+# Process messages misclassified as ham in caughtham and moved
+# manually into the spam-new folder.
+
+# Copyright 2006, 2007, 2008 Bob Proulx <bob@proulx.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Mailman moderator messages are structured with three mime encoded parts.
+# Part 1: A top mailman introduction message.
+# Part 2: The original message to the mailing list.
+# Part 3: A bottom mailman control message.
+#
+# Replying to the 3rd part will discard the message.
+#
+# The process implemented here is to unpack the mime components of the
+# message first into the three components.  Some components
+# recursively have sub-components that are also unpacked.  These are
+# put into the less than descriptive numbered msgNUM.NUM files.
+#
+# SpamAssassin is run on the original message payload.  If SA
+# classifies the message as spam then a control message back to
+# mailman is generated to discard the spam.
+
+# This script assumes that the current working directory is $HOME.
+# Files are referenced by a relative path.  Below $HOME we ensure that
+# no filenames have spaces in them and therefore we do not need to
+# guard against whitespace in filenames.
+
+# Configure how sa-learn will be run.
+#sa_learn_spam="sa-learn --spam"
+sa_learn_spam="spamc -x -d 192.168.1.113 --learntype=spam"
+
+MAILDIR=Mail
 
 LOCK=/tmp/mail-learn-spam.lock
 
 # Check for stale locks.
 if [ -e $LOCK ]; then
     if [ -n "$(find $LOCK -mtime +1 -print 2>/dev/null)" ]; then
-	: Older than one day.  Must be stale.  Complain.
+	: Older lock file found.  Must be stale.  Complain.
 	echo "Old lock found.  Stale?" 1>&2
-	ls -ld $LOCK
+	ls -ld $LOCK 1>&2
 	exit 1
     fi
 fi
@@ -22,11 +65,28 @@ fi
 : Semaphore $LOCK created.
 
 # On exit remove the flag saying we are running.
-trap "rmdir $LOCK" EXIT
+trap 'rm -f $TMPFILE;rmdir $LOCK' EXIT
+TMPFILE=$(mktemp -t mail-learn-spam.XXXXXXXX) || exit 1
 
-for f in $(find $HOME/Mail/spam-new -name tmp -prune -o -type f -print | head -n 1000); do
+# TMPFILE here is used only to hold a timestamp for find to compare against.
+touch --date "6 minutes ago" $TMPFILE
+
+# Look for messages in the queue that are older than a few minutes.
+# This gives time for a human to make a mistake and pull it back out
+# of the spam-new queue before it is processed by this cron script.
+
+for f in $(find Mail/spam-new/new Mail/spam-new/cur -ignore_readdir_race -type f ! -newer $TMPFILE -print); do
     : file $f
-    if sa-learn --spam < $f >/dev/null; then
+    # I could move the file to ./tmp so that it can't change after we
+    # have started but actually it is sometimes nice to be able to
+    # manually catch it before processing and yank it back.  Therefore
+    # I am accepting errors that happen here because the file went
+    # away during processing.
+    if [ ! -f $f ]; then
+	# It went away.  Skip it.
+	continue
+    fi
+    if $sa_learn_spam < $f >/dev/null; then
 	msgid=$(formail -cx Message-ID < $f)
 	# Here is to hoping the message-id is a normal message-id.  It
 	# is created by spammers and virus writers and so I suspect
@@ -34,7 +94,7 @@ for f in $(find $HOME/Mail/spam-new -name tmp -prune -o -type f -print | head -n
 	# problem of if they used ".*" for a message-id.  That could
 	# confuse a standard RE grep.  Try to avoid that.
 	if [ -n "$msgid" ]; then
-	    mmfile=$(find $HOME/Mail/caughtham-mm -name tmp -prune -o -type f -exec grep -F -l "$msgid" {} +)
+	    mmfile=$(find Mail/caughtham-mm -name tmp -prune -o -type f -exec grep -F -l "$msgid" {} +)
 	    # Paranoia causes me to assume that we might hit several
 	    # messages, perhaps copies, and not just a single message.
 	    for file in $mmfile; do

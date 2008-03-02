@@ -1,0 +1,75 @@
+Listhelper is a Mailman helper to help mailing list moderators.
+
+A Short Summary of How Listhelper Works
+
+Listhelper is a mailing list robot that reads moderator messages from
+GNU Mailman.  A list is configured to allow through subscriber and
+whitelisted addresses.  Therefore only non-subscriber email is held
+for moderation.  Mailman sends a moderator message to listhelper and
+listhelper sends the message through SpamAssassin.  It is primarily
+based upon SpamAssassin but also include other checks.  If the message
+is categorized as spam then listhelper replies to the moderator
+message with the discard control portion.  GNU Mailman upon receiving
+that control message will discard the spam from the hold queue.
+
+Most spam comes from non-subscribers.  This means that most of the
+spam is processed through listhelper and automatically discarded.  The
+rules are tuned conservatively since a false positive is much worse
+than a false negative.  Mail is not approved by this system.  Mail
+categorized as spam is discarded but valid mail must still be
+approved.  A human must still run the Mailman hold queue periodically
+to approve messages and to discard false negatives.  Forged mail
+defeats the system since Mailman can only whitelist addresses and
+accepts forgeries as real.  (This is going to be a big problem in the
+future but so far has only been an infrequent annoyance.)
+
+I set this up to combat the huge amount of spam that was flowing into
+the gnu.org mailing lists.  They were becoming unusable and so I
+hacked this together to deal with the problem.  Now a couple of years
+later most of the gnu.org mailing lists are being processed through
+listhelper to keep the spam flow blocked off.  It is pretty effective.
+But it is not without its own share of problems.
+
+The best place to put anti-spam controls is at the earliest point
+where spam can enter the system.  Unfortunately I couldn't affect
+changes to the upstream mail filtering.  I could only address the
+problem by attacking it from the outside.  The only interface
+available was Mailman's remote mail control interface.  Since all I
+had was lemons I made lemonade.
+
+One problem is that when network outages occur there is a backlog of
+spam in the pipeline that needs to be processed.  This pipeline delay
+can take hours or even days to catch up due to the huge volume of spam
+mail.  If gnu.org is down for 10 hours it can take my remote system as
+long as 20 hours to catch up with the backlog.  In that time all of
+the spam is seen in the mailman web interface to the hold queue.
+
+Another problem is that this is centralizing spam categorization which
+can quickly overwhelm the system.  My server can't keep up with the
+world's spam flow.  I am still doing okay with the 1372 mailing lists
+so far but I can tell that the straws are adding up on that camel's
+back.  Eventually this is going to have to push upstream back onto
+Mailman to filter better at the incoming end of the pipeline.
+
+The listhelper is written in portable languages but is not really
+designed as a portable application.  It was written in place for
+exactly the task that it is presently performing.  Trying to replicate
+this in another location for another mailing list should be possible
+but will not be for the faint of heart.
+
+================================================================
+
+Copyright 2008 Bob Proulx <bob@proulx.com>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.

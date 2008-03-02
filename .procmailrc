@@ -1,80 +1,63 @@
+# Procmail rules for listhelper system.
+#
+# Copyright 2006, 2007, 2008 Bob Proulx <bob@proulx.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 PATH=$HOME/bin:/usr/local/bin:/usr/bin:/bin
 # Let deliver to /var/mail/mlmgr for now and my cron will remind me to read it.
 #DEFAULT=$MAILDIR/Maildir/
 COMSAT=no
 MAILDIR=$HOME/Mail
-ARCHIVE=ARCHIVE
+ARCHIVE=Lists
 LOGFILE=$HOME/log/procmail.logfile
 # VERBOSE=on
 UMASK=02
 
+INCLUDERC=$HOME/.procmailrc-local
+
+# Honeypots are lists that do not receive valid mail.
 :0
 * ^X-Original-To: listhelper-honeypot
 honeypot/
 
-:0
-* ^X-Original-To: listhelper-obsolete
-obsolete/
+# Save these because they contain passwords that we can use to
+# unsubscribe us from those mailing lists.
+:0c
+* ^Subject: .* mailing list memberships reminder
+othermailman/
+
+# Keep track of who is using listhelper.
+:0hwic:track-site.lock
+| track-site
 
 # Mail to the moderators.  Process and handle.  SpamAssassin is run
 # from this script after unpacking the attached message.
 
-## If it is from a mailer daemon then we want to discard it.
-#:0c
-#* 1^0 ^From: (.*<)?MAILER-DAEMON@
-#* 1^0 ^From: (.*<)?postmaster@
-#would-discard/
-#
-## Chain on the previous rule ('A' flag).
-#:0A
-#| mailman-discard
-
-## Special to avoid full spamassassin processing on known signature.
-#:0c
-#* ^Subject: [^ ]+$
-#* ^In order to benefit from this lucrative opportunity you need
-#* ^to get in now, before the big news release.
-#would-discard2/
-#
-## Chain on the previous rule ('A' flag).
-#:0Aw:serialize.lock
-#| mailman-discard-nolearn || exit 75
-
-#:0HB:
-#* ^Subject: [^ ]+$
-#* ^One of the key rules every good trader knows is volume
-#* ^before price.  Once the volume is there the price will
-#would-discard2/
-#
-## Chain on the previous rule ('A' flag).
-#:0Aw:serialize.lock
-#| mailman-discard-nolearn || exit 75
-
-## Chain on the previous rule ('A' flag).
-#:0Aw:serialize.lock
-#| mailman-discard-nolearn || exit 75
-
-#:0HBc
-#* ^Subject: [^ ]+ post from [^ ]+ requires approval
-#* ^As list administrator, your authorization is requested for the
-#* ^Subject: confirm
-#would-discard2/
-#
-## Chain on the previous rule ('A' flag).
-#:0Aw:serialize.lock
-#| mailman-discard-nolearn || exit 75
-
 :0w:serialize.lock
 * ^X-List-Administrivia: yes
+* ^X-BeenThere: .*@(freefriends.org|fsf.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|email.rutgers.edu)$
 * ^Subject: .* post from
 | mailman-filter || exit 75
 
+# Non-English versions
 # Example:
 #   Subject: =?iso-8859-1?q?El_envio_a_GNUGNU_de_ansjohn=5F53=40hotmail=2Ecom?=
 #   	=?iso-8859-1?q?_precisa_de_aprobacion?=
 :0w:serialize.lock
 * ^X-List-Administrivia: yes
+* ^X-BeenThere: .*@(freefriends.org|fsf.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|email.rutgers.edu)$
 * ^Subject: .*El[ _]envio[ _]a[ _].*[ _]precisa[ _]de[ _]aprobacion
 | mailman-filter || exit 75
 
@@ -138,20 +121,23 @@ obsolete/
 :0wic:listcounter.lock
 | sh -c 'expr $(<$HOME/Mail/listcounter) + 1 >$HOME/Mail/listcounter'
 
+# Learn mail sent to the list as non-spam.  These are few enough.
 :0c
 * ^X-BeenThere: [-a-zA-Z0-9]+@
+* ^X-BeenThere: .*@(freefriends.org|fsf.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|email.rutgers.edu)$
 * ^Precedence: (list|bulk|fm-user)
 * ^List-Archive:
 * ^List-Id:
 * ^List-Post:
 * ^List-Subscribe:
 * ^List-Unsubscribe:
-| sa-learn --ham >/dev/null 2>&1
+| sah >/dev/null 2>&1
 
-# Archive all mail that comes through to the lists.
+# Keep a moving snapshot of mail that comes through to the lists.
 # Chain on the previous rule ('A' flag) and match on the listname.
 
 :0A
+* ^X-BeenThere: .*@(freefriends.org|fsf.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|email.rutgers.edu)$
 * ^X-BeenThere: [-a-zA-Z0-9]+@
 * ^X-BeenThere: \/[-a-zA-Z0-9]+
 $ARCHIVE/$MATCH/

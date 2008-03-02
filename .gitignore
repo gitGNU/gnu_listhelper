@@ -1,8 +1,11 @@
 auto-whitelist
+auto-whitelist.mutex
 bayes.mutex
 bayes_journal
 bayes_seen
 bayes_toks
+.procmailrc-local
+.karl
 .Xauthority
 .bash_history
 .bash_profile

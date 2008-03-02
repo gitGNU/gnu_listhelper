@@ -2,6 +2,21 @@
 #
 # This script processes a mailman moderator message.
 #
+# Copyright 2006, 2007, 2008 Bob Proulx <bob@proulx.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 # Mailman moderator messages are structured with three mime encoded parts.
 # Part 1: A top mailman introduction message.
 # Part 2: The original message to the mailing list.
@@ -18,6 +33,11 @@
 # classifies the message as spam then a control message back to
 # mailman is generated to discard the spam.
 
+# Configure how spamassassin will be run.
+#spamassassin="spamassassin"
+spamassassin="spamc -x -d 192.168.1.113"
+#spamassassin="connect 192.168.1.113 5783"
+
 # Set MAX_CROSSPOST to indicate the maximum number of times an
 # identical message may be seen before it is considered spam by the
 # crossassassin feature.
@@ -30,7 +50,7 @@ PATH=$PATH:/usr/sbin:/sbin	# for sendmail et al
 
 # Work in a subdirectory.  Set up to clean up when we exit.
 trap 'cd / ; rm -rf $TMPDIR' EXIT
-TMPDIR=$(mktemp -d) || exit 1
+TMPDIR=$(mktemp -d -t mailman-filter.XXXXXXXX) || exit 1
 
 cd $TMPDIR || exit 1
 
@@ -118,7 +138,7 @@ run_montypython_check()
 run_spamassassin_check()
 {
     $isspam && : msg is spam || : msg is not spam
-    if ! spamassassin < msg2.1 > msg2.2; then
+    if ! $spamassassin < msg2.1 > msg2.2; then
 	exit 1
     fi
     if grep -q "^X-Spam-Flag: YES" msg2.2; then
@@ -146,16 +166,19 @@ check_msg_contents()
     if ! filter_body | cat -s | grep -q .; then
 	: empty message
 	isspam=true
+	isveryspammy=true
 	return
     fi
     if grep -q -E -f $HOME/etc/blacklist-body msg2.1; then
 	: Matched known spam in message body.
 	isspam=true
+	isveryspammy=true
 	return
     fi
     if grep -q -E -f $HOME/etc/whitelist-body msg2.1; then
 	: Matched known non-spam in message body.
 	isspam=false
+	isveryspammy=false
 	whitelisted=true
 	return
     fi
