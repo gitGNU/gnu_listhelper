@@ -28,8 +28,11 @@ trusted_networks 130.225.2.169  # dmz-169.daimi.au.dk / tug.org
 trusted_networks 199.232.76.173  # monty-python.gnu.org
 #trusted_networks 127/8  # Will be implicit in SA-3.2.x but still on 3.1.7.
 trusted_networks 199.232.41.67  # nadesico.gnu.org
-trusted_networks 199.232.76.164  # fencepost.gnu.org
+trusted_networks 199.232.76.164  # rev-c76-164.gnu.org (was fencepost.gnu.org)
 trusted_networks 199.232.76.165  # lists.gnu.org
+trusted_networks 199.232.76.166 # rev-c76-166.gnu.org (aka mail.gnu.org)
+trusted_networks 140.186.70.10 # fencepost.gnu.org
+trusted_networks 140.186.70.13 # mail.fsf.org
 # 216.17.153.56/29 is already included in /etc/spamassassin/local-local.cf
 # and it causes an error to include it here too.
 #trusted_networks 216.17.153.56/29  # proulx.com
