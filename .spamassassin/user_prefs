@@ -84,6 +84,12 @@ score SPF_HELO_FAIL  0 2.0 0 2.0
 # This seems unlikely to cause false positives and so am increasing it.
 score TVD_PDF_FINGER01 4.5
 
+score HABEAS_ACCREDITED_COI 0.01
+
+score RCVD_IN_DNSWL_HI -0.001
+score RCVD_IN_DNSWL_MED -0.001
+score RCVD_IN_DNSWL_LOW -0.001
+
 # Original: score HTML_MESSAGE 0.001
 # But it is a stronger indicator than that.
 score HTML_MESSAGE		0.5
