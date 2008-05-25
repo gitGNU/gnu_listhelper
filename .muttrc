@@ -40,6 +40,7 @@ set pipe_decode=no
 set read_inc=0
 set write_inc=0
 set pager_index_lines=8
+set markers="no"
 
 set header_cache="~/var/headercache"
 set maildir_header_cache_verify=no
@@ -84,9 +85,14 @@ spam "X-Spam-Status: (Yes|No), score=(-?[[:digit:]]+\.[[:digit:]]+)" "%2"
 folder-hook . 'set index_format="%4C %Z %{%b %d} %-15.15L (%?l?%4l&%4c?) %s"'
 folder-hook caughtspam 'set index_format="%4C %Z %{%b%d} %4H %-15.15F %4c %s"'
 folder-hook caughtham 'set index_format="%4C %Z %{%b%d} %4H %-15.15F %4c %s"'
+folder-hook ham 'set index_format="%4C %Z %{%b%d} %4H %-15.15F %4c %s"'
+folder-hook spam 'set index_format="%4C %Z %{%b%d} %4H %-15.15F %4c %s"'
+folder-hook spam-new 'set index_format="%4C %Z %{%b%d} %4H %-15.15F %4c %s"'
 folder-hook . 'set sort=date-received'
 folder-hook caughtspam 'set sort=spam'
 folder-hook caughtham 'push l~N\nop<home>'
+folder-hook ham 'set sort=spam'
+folder-hook spam 'set sort=spam'
 
 set spoolfile==caughtham
 #mailboxes !
