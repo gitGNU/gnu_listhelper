@@ -47,7 +47,7 @@ othermailman/
 
 :0w:serialize.lock
 * ^X-List-Administrivia: yes
-* ^X-BeenThere: .*@(freefriends.org|fsf.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|email.rutgers.edu)$
+* ^X-BeenThere: .*@(freefriends.org|fsf.org|gplv3.fsf.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|email.rutgers.edu)$
 * ^Subject: .* post from
 | mailman-filter || exit 75
 
@@ -57,7 +57,7 @@ othermailman/
 #   	=?iso-8859-1?q?_precisa_de_aprobacion?=
 :0w:serialize.lock
 * ^X-List-Administrivia: yes
-* ^X-BeenThere: .*@(freefriends.org|fsf.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|email.rutgers.edu)$
+* ^X-BeenThere: .*@(freefriends.org|fsf.org|gplv3.fsf.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|email.rutgers.edu)$
 * ^Subject: .*El[ _]envio[ _]a[ _].*[ _]precisa[ _]de[ _]aprobacion
 | mailman-filter || exit 75
 
