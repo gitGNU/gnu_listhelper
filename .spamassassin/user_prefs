@@ -78,6 +78,11 @@ bayes_auto_expire 0
 #  score BAYES_95 0.0001 0.0001 3.0 3.0
 #  score BAYES_99 0.0001 0.0001 3.5 3.5
 
+# After having been burned by increasing the Bayes previously
+# I find myself increasing them again in order to reduce the spam.
+score BAYES_95 0.0001 0.0001 3.0 4.0
+score BAYES_99 0.0001 0.0001 3.5 4.4
+
 # Original in 3.0.0:
 # score SPF_HELO_FAIL 0 0.405 0 0.001
 score SPF_HELO_FAIL  0 2.0 0 2.0
