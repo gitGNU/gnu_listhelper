@@ -1,6 +1,6 @@
 # Procmail rules for listhelper system.
 #
-# Copyright 2006, 2007, 2008 Bob Proulx <bob@proulx.com>
+# Copyright 2006, 2007, 2008, 2009, 2010 Bob Proulx <bob@proulx.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,9 +23,16 @@ MAILDIR=$HOME/Mail
 ARCHIVE=Lists
 LOGFILE=$HOME/log/procmail.logfile
 # VERBOSE=on
-UMASK=02
+# UMASK 03 because otherwise /var/mail/mlmgr is mode o+x for unknown reason.
+UMASK=03
+APPROVEDSITES=".*@(freefriends.org|(badvista\.|gplv3\.)?fsf.org|badvista.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|gnu.org.ua|listas.trisquel.info|endsoftwarepatents.org|lists.fedorahosted.org|gnuherds.org|alioth.debian.org)$"
 
 INCLUDERC=$HOME/.procmailrc-local
+
+:0
+* ^From: .*Cron.Daemon
+* ^Subject: Cron
+$DEFAULT
 
 # Honeypots are lists that do not receive valid mail.
 :0
@@ -33,7 +40,9 @@ INCLUDERC=$HOME/.procmailrc-local
 honeypot/
 
 # Save these because they contain passwords that we can use to
-# unsubscribe us from those mailing lists.
+# unsubscribe us from those mailing lists.  This is a quick special
+# hack.  The othermailman/ mailbox isn't aged off like the
+# administrivia/ aged off and so messages will stay around longer.
 :0c
 * ^Subject: .* mailing list memberships reminder
 othermailman/
@@ -45,86 +54,78 @@ othermailman/
 # Mail to the moderators.  Process and handle.  SpamAssassin is run
 # from this script after unpacking the attached message.
 
-:0w:serialize.lock
-* ^X-List-Administrivia: yes
-* ^X-BeenThere: .*@(freefriends.org|(badvista\.|gplv3\.)?fsf.org|badvista.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|email.rutgers.edu)$
-* ^Subject: .* post from
-| mailman-filter || exit 75
-
-# Non-English versions
-# Example:
-#   Subject: =?iso-8859-1?q?El_envio_a_GNUGNU_de_ansjohn=5F53=40hotmail=2Ecom?=
+# English versions of moderator message subject:
+#   Subject: Bug-ddrescue post from user@gmail.com requires approval
+# Non-English versions of moderator message subject:
+# Subject: =?iso-8859-9?q?service=40paypal=2Efr_taraf=FDndan_g=F6nderilen_w?=
+#       =?iso-8859-9?q?ww-tr-comm_liste_mesaj=FD_onay_gerektiriyor?=
+# Subject: =?iso-8859-9?q?boy1194=40hotmail=2Efr_taraf=FDndan_g=F6nderilen_?=
+#       =?iso-8859-9?q?www-tr-comm_liste_mesaj=FD_onay_gerektiriyor?=
+# Subject: =?iso-8859-1?q?El_envio_a_GNUGNU_de_ansjohn=5F53=40hotmail=2Ecom?=
 #   	=?iso-8859-1?q?_precisa_de_aprobacion?=
+# Subject: =?iso-8859-1?q?El_envio_a_www-es-general_de_envios=40enviossa=2E?=
+#       =?iso-8859-1?q?info_precisa_de_aprobacion?=
+# Subject: =?iso-8859-1?q?Un_envoi_sur_la_liste_Dolibarr-dev_=E0_partir_de_?=
+#       =?iso-8859-1?q?ystreak=40f2s=2Ecom_requiert_une_approbation?=
+# Subject: =?iso-8859-1?q?Un_envoi_sur_la_liste_Dolibarr-dev_=E0_partir_de_?=
+#       =?iso-8859-1?q?email=40mail=2Einternetseer=2Ecom_requiert_une_approbation?=
+# * ^Subject: .*El[ _]envio[ _]a[ _].*[ _]precisa[ _]de[ _]aprobacion
 :0w:serialize.lock
 * ^X-List-Administrivia: yes
-* ^X-BeenThere: .*@(freefriends.org|(badvista\.|gplv3\.)?fsf.org|badvista.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|email.rutgers.edu)$
-* ^Subject: .*El[ _]envio[ _]a[ _].*[ _]precisa[ _]de[ _]aprobacion
+* $^X-BeenThere: $APPROVEDSITES
+* 1^0 ^Subject: [^ ]+ post from
+* 1^0 ^Subject: .*El_envio_a_
+* 1^0 ^Subject: .*Un_envoi_sur_la_liste_
+* 1^0 ^Subject: .*_taraf=FDndan_g=F6nderilen_
 | mailman-filter || exit 75
 
-# Added and combined with other List-Administrivia patterns.
+# Spammers use Mailman for mailing list manager.  I am shocked by that
+# thought too.  So save information from Mailman for use later.
+# Sometimes we can help them listwash by unsubscribing us from the
+# spammer's Mailman list using this information.  It isn't good but is
+# sometimes pragmatic.
+# Example for the regular expression match:
+#   Subject: tug.org mailing list memberships reminder
+:0
+* ^X-List-Administrivia: yes
+* ^Subject: [-a-zA-Z0-9.]+ mailing list memberships reminder
+administrivia/
+
+# Other List-Administrivia patterns.
 # Example for the regular expression match:
 #   Subject: 1 bug-gnu-utils moderator request(s) waiting
 #   Subject: bug-grep subscription notification
-#   Subject: tug.org mailing list memberships reminder
-
 :0
 * ^X-List-Administrivia: yes
-{
-  :0
-  * 1^0 ^Subject: The results of your email commands
-  * 1^0 ^Subject: Auto-discard notification
-  * 1^0 ^Subject: Last autoresponse notification for today
-  * 1^0 ^Subject: [-a-zA-Z0-9]+ subscription notification
-  * 1^0 ^Subject: [-a-zA-Z0-9]+ unsubscribe notification
-  # Example spanish The results of your email commands
-  # Subject: =?iso-8859-1?q?Resultados_de_los_comandos_enviados_por_correo_el?=
-  #  =?iso-8859-1?q?ectronico?=
-  * 1^0 ^Subject: .*Notificaci.*n_de_suscripci.*n
-  # Subject: =?iso-8859-1?q?Notificaci=F3n_de_desuscripci=F3n_a_Radius-espano?=
-  #  =?iso-8859-1?q?l?=
-  # Subject: =?iso-8859-1?q?fsfe-de_unsubscribe_notification?=
-  * 1^0 ^Subject: .*unsubscribe.notification
-  * 1^0 ^Subject: .*Notificaci.*n_de_desuscripci.*n
-  * 1^0 ^Subject: .*Resultados_de_los_comandos_enviados_por_correo_el
-  # Subject: =?iso-8859-1?q?notification_d=27abonnement_de_lilypond-user-fr?=
-  * 1^0 ^Subject: .*notification.d.*abonnement_de_
-  # Subject: =?iso-8859-1?q?notification_de_r=E9siliation_de_lilypond-user-fr?=
-  * 1^0 ^Subject: .*notification.de.r.*siliation.de
-  # Subject: M-Zltima notificaciM-sn de autorespuesta de hoy
-  * 1^0 ^Subject: .*tima.notificaci.*de.autorespuesta.de.hoy
-  # =?iso-8859-1?q?notifica=E7=E3o_de_inscri=E7=E0o_de_Esteban-users?=
-  * 1^0 Subject: .*notifica..o_de_inscri._o_de
-  /dev/null
-
-  :0
-  * 1^0 ^Subject: [0-9]+ [-a-zA-Z0-9]+ moderator request
-  * 1^0 ^Subject: [-a-zA-Z0-9.]+ mailing list memberships reminder
-  * 1^0 ^Subject: Bounce action notification
-  administrivia/
-}
+* 1^0 ^Subject: Bounce action notification
+* 1^0 ^Subject: [0-9]+ [-a-zA-Z0-9]+ moderator request
+administrivia/
 
 # I think this is a mailman bug that it sends messages to the list owner
 # to the list moderators too.  /dev/null these.
-
 :0
 * ^Sender: mailman-bounces@
 * ^TO_[-a-zA-Z0-9]+-owner@
 /dev/null
+
+# Keep a running counter for later graphing of data.  (RRDTool)
+:0wic:listcounter.lock
+| sh -c 'expr $(cat $HOME/Mail/listcounter) + 1 >$HOME/Mail/listcounter'
 
 # Mail to the list.  Probably approved but possibly whitelisted.
 # Teach all mail through the list as non-spam.  Be careful that random
 # other mail through this account is not taught.  This is needed
 # because mailman sends other types of messages to the moderator
 # address.
-
-# Keep a running counter for later graphing of data.
-:0wic:listcounter.lock
-| sh -c 'expr $(<$HOME/Mail/listcounter) + 1 >$HOME/Mail/listcounter'
-
+#
 # Learn mail sent to the list as non-spam.  These are few enough.
+# This is necessary because otherwise the Bayes engine will only see
+# spam and won't have any non-spam to keep it stable.  Therefore
+# subscribing listhelper to the mailing lists is a good thing within
+# reason.
 :0c
 * ^X-BeenThere: [-a-zA-Z0-9]+@
-* ^X-BeenThere: .*@(freefriends.org|fsf.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|email.rutgers.edu)$
+* $^X-BeenThere: $APPROVEDSITES
 * ^Precedence: (list|bulk|fm-user)
 * ^List-Archive:
 * ^List-Id:
@@ -134,10 +135,17 @@ othermailman/
 | sah >/dev/null 2>&1
 
 # Keep a moving snapshot of mail that comes through to the lists.
+# This isn't strictly necessary and may be avoided but is useful for
+# debugging to verify what is coming through the lists and getting
+# learned as non-spam.  Or instead of filing in separate mailboxes
+# this could easily be saved in one combined mailbox.  I am
+# considering doing that as a simplification since this isn't really
+# intended to be an end reading location.  But currently 14 days only
+# creates around 4,000 files and 40MB of disk so this isn't nearly as
+# heavy as other parts of the listhelper operations.
 # Chain on the previous rule ('A' flag) and match on the listname.
-
 :0A
-* ^X-BeenThere: .*@(freefriends.org|fsf.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|email.rutgers.edu)$
+* $^X-BeenThere: $APPROVEDSITES
 * ^X-BeenThere: [-a-zA-Z0-9]+@
 * ^X-BeenThere: \/[-a-zA-Z0-9]+
 $ARCHIVE/$MATCH/
@@ -146,3 +154,9 @@ $ARCHIVE/$MATCH/
 :0
 * ^Sender: mailman-bounces@
 /dev/null
+
+# Lastly the mlmgr address has become known and now collects spam.
+# There shouldn't be valid mail there and I have yet to see any.
+# Therefore simply discard the remaining.
+:0
+devnull
