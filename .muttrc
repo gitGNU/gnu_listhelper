@@ -32,7 +32,7 @@ set save_empty="no"	# Delete empty folders
 set nomark_old  # Don't mark unread new msgs as old.
 set nosmart_wrap
 set nowait_key
-set nomime_forward
+set mime_forward
 set recall=no
 set abort_nosubject=no
 set fast_reply=yes
