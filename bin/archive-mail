@@ -18,40 +18,34 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if [ ! -t 0 ]; then
-    exec >/tmp/archive-mail.out 2>&1
-fi
-
 cd $HOME/Mail || exit 1
 
-find caughtspam/cur -type f -exec mv --target-directory=caughtspam-archive/cur/ {} +
+# Ensure that these are valid mailboxes.
+for mailbox in \
+    administrivia \
+    caughtham \
+    caughtham-mm \
+    caughtspam-archive \
+    caughtspam-archive-mm \
+    caughtspam-mm \
+    spam \
+    would-discard \
+    ; do
+  for maildirsubdir in cur new tmp; do
+      mkdir -p OLD/$mailbox/$maildirsubdir
+  done
+done
 
-mkdir -p \
-  OLD/administrivia/cur \
-  OLD/administrivia/new \
-  OLD/administrivia/tmp \
-  OLD/caughtham-mm/cur \
-  OLD/caughtham-mm/new \
-  OLD/caughtham-mm/tmp \
-  OLD/caughtham/cur \
-  OLD/caughtham/new \
-  OLD/caughtham/tmp \
-  OLD/caughtspam-archive-mm/cur \
-  OLD/caughtspam-archive-mm/new \
-  OLD/caughtspam-archive-mm/tmp \
-  OLD/caughtspam-archive/cur \
-  OLD/caughtspam-archive/new \
-  OLD/caughtspam-archive/tmp \
-  OLD/caughtspam-mm/cur \
-  OLD/caughtspam-mm/new \
-  OLD/caughtspam-mm/tmp \
-  OLD/spam/cur \
-  OLD/spam/new \
-  OLD/spam/tmp \
-  OLD/would-discard/cur \
-  OLD/would-discard/new \
-  OLD/would-discard/tmp
+# Once a listhelping human has looked at the message in caughtspam,
+# noted that it is spam and moved on, then it speeds things up to move
+# it immediately into the caughtspam-archive so that the caughtspam
+# folder is kept smaller.  This is a special optimization.
+find caughtspam/cur -type f \
+  -exec mv --target-directory=caughtspam-archive/cur/ {} +
 
+# After aging off move messages from the current area to the OLD
+# (archive) area where they can be kept longer.  This speeds up normal
+# operations by keeping the size of recent mailboxes smaller.
 find \
   administrivia \
   caughtham \
@@ -64,8 +58,22 @@ find \
   -type f -mtime +4 -printf "mv %p OLD/%p\n" \
   | sh
 
+# Expire messages used in daily listhelper operations.
 find OLD -type f -mtime +14 -exec rm -f {} +
 
+# Expire messages sent to a mailing list and learned as non-spam.
 find Lists -type f -mtime +14 -exec rm -f {} +
+
+# Expire the devnull trashcan.  Sometimes for debugging it is
+# convenient to save files that would otherwise be discarded.  If
+# saved to the devnull folder than this trashcan can be automatically
+# cleaned.  It allows safer debugging for a longer period without
+# overflowing the disk when left too long.  Yes I had done this and
+# therefore created this action.
+find devnull -type f -mtime +7 -exec rm -f {} +
+
+# Not strickly mail messages but the mutt headercache of mailbox
+# folders.  These also need to be expired.
+find $HOME/var/headercache -type f -mtime +14 -exec rm -f {} +
 
 exit 0
