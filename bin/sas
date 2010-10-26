@@ -6,13 +6,13 @@ export LC_ALL=C
 
 # Configure how sa-learn will be run.
 #sa_learn_spam="sa-learn --spam"
-sa_learn_spam="spamc -x -d 192.168.1.113 --learntype=spam"
+sa_learn_spam="spamc -x -d 192.168.240.11 --learntype=spam"
 
 $sa_learn_spam "$@"
 
 exit 0
 
-# Copyright 2006, 2008 Bob Proulx <bob@proulx.com>
+# Copyright 2006, 2008, 2010 Bob Proulx <bob@proulx.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
