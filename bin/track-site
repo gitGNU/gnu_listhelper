@@ -7,7 +7,7 @@
 
 # The message comes in on stdin.
 line="$(grep ^X-BeenThere:)"
-if grep -F -q -x "$line" $HOME/log/site-tracking; then
+if ! grep -F -q -x "$line" $HOME/log/site-tracking; then
     echo "$line" >> $HOME/log/site-tracking
     sort -u -o $HOME/log/site-tracking $HOME/log/site-tracking
 fi
