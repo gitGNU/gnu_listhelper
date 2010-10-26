@@ -5,6 +5,7 @@ bayes_journal
 bayes_seen
 bayes_toks
 .procmailrc-local
+.profile
 .karl
 .Xauthority
 .bash_history
