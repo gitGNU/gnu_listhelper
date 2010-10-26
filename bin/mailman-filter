@@ -35,8 +35,7 @@
 
 # Configure how spamassassin will be run.
 #spamassassin="spamassassin"
-spamassassin="spamc -x -d 192.168.1.113"
-#spamassassin="connect 192.168.1.113 5783"
+spamassassin="spamc -x -d 192.168.240.11"
 
 # Set MAX_CROSSPOST to indicate the maximum number of times an
 # identical message may be seen before it is considered spam by the

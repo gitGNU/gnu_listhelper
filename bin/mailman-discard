@@ -20,7 +20,7 @@
 
 # Configure how sa-learn will be run.
 #sa_learn_spam="sa-learn --spam"
-sa_learn_spam="spamc -x -d 192.168.1.113 --learntype=spam"
+sa_learn_spam="spamc -x -d 192.168.240.11 --learntype=spam"
 
 export LC_ALL=C
 umask 02
