@@ -99,6 +99,10 @@ score RCVD_IN_DNSWL_LOW -0.001
 score HABEAS_ACCREDITED_COI -0.001
 score HABEAS_ACCREDITED_SOI -0.001
 
+# Original in 3.2.5:
+# score RCVD_IN_SORBS_DUL 0 1.615 0 0.877
+score RCVD_IN_SORBS_DUL 2.0
+
 # Original: score HTML_MESSAGE 0.001
 # But it is a stronger indicator than that.
 score HTML_MESSAGE		0.5
