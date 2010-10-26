@@ -3,7 +3,7 @@
 # Process messages misclassified as ham in caughtham and moved
 # manually into the spam-new folder.
 
-# Copyright 2006, 2007, 2008 Bob Proulx <bob@proulx.com>
+# Copyright 2006, 2007, 2008, 2010 Bob Proulx <bob@proulx.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,11 +45,12 @@ sa_learn_spam="spamc -x -d 192.168.240.11 --learntype=spam"
 
 MAILDIR=Mail
 
-LOCK=/tmp/mail-learn-spam.lock
+# In /tmp so that a reboot and the associated /tmp purge will clear it.
+LOCK=/tmp/$(whoami).mail-learn-spam.lock
 
 # Check for stale locks.
 if [ -e $LOCK ]; then
-    if [ -n "$(find $LOCK -mtime +1 -print 2>/dev/null)" ]; then
+    if [ -n "$(find $LOCK --newermt "1 hour ago" -print 2>/dev/null)" ]; then
 	: Older lock file found.  Must be stale.  Complain.
 	echo "Old lock found.  Stale?" 1>&2
 	ls -ld $LOCK 1>&2
@@ -65,17 +66,15 @@ fi
 : Semaphore $LOCK created.
 
 # On exit remove the flag saying we are running.
-trap 'rm -f $TMPFILE;rmdir $LOCK' EXIT
-TMPFILE=$(mktemp -t mail-learn-spam.XXXXXXXX) || exit 1
-
-# TMPFILE here is used only to hold a timestamp for find to compare against.
-touch --date "6 minutes ago" $TMPFILE
+trap 'rmdir $LOCK' EXIT
 
 # Look for messages in the queue that are older than a few minutes.
 # This gives time for a human to make a mistake and pull it back out
 # of the spam-new queue before it is processed by this cron script.
+# This uses a GNU find specific construct -newerXY which perfectly
+# matches what is needed here.
 
-for f in $(find Mail/spam-new/new Mail/spam-new/cur -ignore_readdir_race -type f ! -newer $TMPFILE -print); do
+for f in $(find Mail/spam-new/new Mail/spam-new/cur -ignore_readdir_race -type f ! -newerct "6 minutes ago" -print); do
     : file $f
     # I could move the file to ./tmp so that it can't change after we
     # have started but actually it is sometimes nice to be able to
@@ -86,15 +85,24 @@ for f in $(find Mail/spam-new/new Mail/spam-new/cur -ignore_readdir_race -type f
 	# It went away.  Skip it.
 	continue
     fi
-    if $sa_learn_spam < $f >/dev/null; then
+    : $sa_learn_spam "<" "$f"
+    $sa_learn_spam < $f >/dev/null
+    rc=$?
+    if [ $rc -eq 0 ] || [ $rc -eq 98 ]; then
+	# rc=98: This appears to be the return (undocumented) when spamc
+	# can't learn the message because it is already learned.
 	msgid=$(formail -cx Message-ID < $f)
 	# Here is to hoping the message-id is a normal message-id.  It
 	# is created by spammers and virus writers and so I suspect
 	# the content characters could be unusual.  Think about the
 	# problem of if they used ".*" for a message-id.  That could
 	# confuse a standard RE grep.  Try to avoid that.
+	# Also, other instances of other processes might be moving
+	# these files around at the same time.  That is okay.  But it
+	# might mean that find/grep here will complain about a file
+	# that was there and is now not there.  That is okay to ignore.
 	if [ -n "$msgid" ]; then
-	    mmfile=$(find Mail/caughtham-mm -name tmp -prune -o -type f -exec grep -F -l "$msgid" {} +)
+	    mmfile=$(find Mail/caughtham-mm -name tmp -prune -o -type f -exec grep -F -l "$msgid" {} + 2>/dev/null)
 	    # Paranoia causes me to assume that we might hit several
 	    # messages, perhaps copies, and not just a single message.
 	    for file in $mmfile; do
@@ -103,9 +111,12 @@ for f in $(find Mail/spam-new/new Mail/spam-new/cur -ignore_readdir_race -type f
 		fi
 	    done
 	fi
+	mkdir -p $MAILDIR/spam/cur $MAILDIR/spam/new $MAILDIR/spam/tmp
 	if safecat $MAILDIR/spam/tmp $MAILDIR/spam/new < $f >/dev/null; then
 	    rm -f $f
 	fi
+    else
+	echo "$sa_learn_spam failed $rc on $f"
     fi
 done
 
