@@ -68,6 +68,8 @@ fi
 # On exit remove the flag saying we are running.
 trap 'rmdir $LOCK' EXIT
 
+cd $HOME || exit 1
+
 # Look for messages in the queue that are older than a few minutes.
 # This gives time for a human to make a mistake and pull it back out
 # of the spam-new queue before it is processed by this cron script.
