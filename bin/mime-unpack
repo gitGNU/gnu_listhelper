@@ -4,7 +4,7 @@
 # parts in the current directory.  Resulting files are named msg1,
 # msg2, msg3 through msgN.
 
-# Copyright 2006, 2007, 2008 Bob Proulx <bob@proulx.com>
+# Copyright 2006, 2007, 2008, 2011, 2013 Bob Proulx <bob@proulx.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Depends: librmail-ruby1.8 | librmail-ruby1.6 | librmail-ruby
+
+# Work around Ruby design bug.  Make signals work as early as possible
+# to reduce time of race condition.
+if __FILE__ == $0               # provide for test frame
+  def sighandler(sig)
+    trap sig, "DEFAULT"
+    exec "kill -#{sig} $$"      # Use external kill as workaround.
+    Process.kill sig, $$        # This fails due to ruby misdesign.
+  end
+  [ :HUP, :INT, :TERM ].each do |sig|
+    trap(sig) { sighandler(sig) }
+  end
+end
 
 require "rmail/parser"
 
