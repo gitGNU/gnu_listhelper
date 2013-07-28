@@ -18,6 +18,7 @@ bayes_toks
 .gitignore
 .htoprc
 .mailcap
+.passwords.lists.gnu.org
 .screenrc
 .ssh
 Mail
