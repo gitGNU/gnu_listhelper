@@ -35,7 +35,7 @@
 
 # Configure how spamassassin will be run.
 #spamassassin="spamassassin"
-spamassassin="spamc -x -d 192.168.240.11"
+spamassassin="spamc -s 5000000 -x -d 192.168.240.11" # host desolation
 
 # Set MAX_CROSSPOST to indicate the maximum number of times an
 # identical message may be seen before it is considered spam by the
