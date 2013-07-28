@@ -7,7 +7,7 @@
 #spamassassin="spamassassin"
 #spamassassin="spamc -x -d 192.168.240.11"
 # If we use spamc we have lost the debug ability.
-spamassassin="ssh desolation spamassassin"
+spamassassin="ssh 192.168.240.11 spamassassin"
 
 export LC_ALL=C
 $spamassassin -d -t -D all 2>&1 | less
