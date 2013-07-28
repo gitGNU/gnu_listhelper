@@ -37,8 +37,8 @@ set recall=no
 set abort_nosubject=no
 set fast_reply=yes
 set pipe_decode=no
-set read_inc=0
-set write_inc=0
+set read_inc=100
+set write_inc=100
 set pager_index_lines=8
 set markers="no"
 
