@@ -89,8 +89,10 @@ folder-hook ham 'set index_format="%4C %Z %{%b%d} %4H %-15.15F %4c %s"'
 folder-hook spam 'set index_format="%4C %Z %{%b%d} %4H %-15.15F %4c %s"'
 folder-hook spam-new 'set index_format="%4C %Z %{%b%d} %4H %-15.15F %4c %s"'
 folder-hook . 'set sort=date-received'
-folder-hook caughtspam 'set sort=spam'
 folder-hook caughtham 'push l~N\nop<home>'
+# For Karl who doesn't want to see these:
+#  ~N ~h "^X-Spam-Status: Yes, score=[456]"
+folder-hook caughtspam 'set sort=spam;push l~h\^X-Spam-Status:.Yes..score.[4567]\nop<home>'
 folder-hook ham 'set sort=spam'
 folder-hook spam 'set sort=spam'
 
