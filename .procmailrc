@@ -129,7 +129,6 @@ administrivia/
 * ^X-BeenThere: [-a-zA-Z0-9]+@
 * $^X-BeenThere: $APPROVEDSITES
 * ^Precedence: (list|bulk|fm-user)
-* ^List-Archive:
 * ^List-Id:
 * ^List-Post:
 * ^List-Subscribe:
