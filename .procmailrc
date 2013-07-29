@@ -151,6 +151,13 @@ administrivia/
 * ^X-BeenThere: \/[-a-zA-Z0-9]+
 $ARCHIVE/$MATCH/
 
+# Every time listhelper sends a command we get a confirmation back.
+:0
+* ^X-List-Administrivia: yes
+* ^Subject: The results of your email commands
+* ^Precedence: bulk
+/dev/null
+
 # There is a lot of miscellaneous mail to the listhelper which is ignored.
 :0
 * ^Sender: mailman-bounces@
