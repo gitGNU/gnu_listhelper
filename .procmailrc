@@ -166,5 +166,6 @@ $ARCHIVE/$MATCH/
 # Lastly the mlmgr address has become known and now collects spam.
 # There shouldn't be valid mail there and I have yet to see any.
 # Therefore simply discard the remaining.
+# Using a ./devnull/ trashcan here instead of /dev/null bit bucket.
 :0
-devnull
+devnull/
