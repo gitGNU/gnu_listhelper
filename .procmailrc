@@ -25,7 +25,7 @@ LOGFILE=$HOME/log/procmail.logfile
 # VERBOSE=on
 # UMASK 03 because otherwise /var/mail/mlmgr is mode o+x for unknown reason.
 UMASK=03
-APPROVEDSITES=".*@(freefriends.org|(badvista\.|gplv3\.)?fsf.org|badvista.org|fsfeurope.org|gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|tug.org|gnu.org.ua|listas.trisquel.info|endsoftwarepatents.org|lists.fedorahosted.org|gnuherds.org|alioth.debian.org)$"
+APPROVEDSITES=".*@(freefriends.org|(badvista\.|gplv3\.)?fsf.org|badvista.org|fsfeurope.org|gnu.org|debbugs.gnu.org|gnupress.org|nongnu.org|playogg.org|redhat.com|texinfo.org|(uk\.)?tug.org|gnu.org.ua|listas.trisquel.info|endsoftwarepatents.org|libreplanet.org|lists.fedorahosted.org|gnuherds.org|lists.alioth.debian.org)$"
 
 INCLUDERC=$HOME/.procmailrc-local
 
