@@ -99,6 +99,8 @@ administrivia/
 * ^X-List-Administrivia: yes
 * 1^0 ^Subject: Bounce action notification
 * 1^0 ^Subject: [0-9]+ [-a-zA-Z0-9]+ moderator request
+* 1^0 ^Subject: Last autoresponse notification for today
+* 1^0 ^Subject: [^[:space:]]+ (un)?subscribe notification
 administrivia/
 
 # I think this is a mailman bug that it sends messages to the list owner
